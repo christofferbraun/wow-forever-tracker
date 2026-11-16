@@ -1,6 +1,8 @@
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const express = require('express');
 
 const config = require('./src/config');
@@ -402,9 +404,39 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 // --- pages --------------------------------------------------------------------
 
 const pub = path.join(__dirname, 'public');
-app.get('/admin', (req, res) => res.sendFile(path.join(pub, 'admin.html')));
-app.use(express.static(pub, { index: 'index.html', maxAge: '5m' }));
-app.use((req, res) => res.status(404).sendFile(path.join(pub, 'index.html')));
+
+// Cache busting: pages are served with "?v=<content hash>" on every script and
+// stylesheet link, so a deploy can never mix a new page with old cached JS/CSS
+// (browser or Cloudflare). Versioned assets are cached for a year; pages are
+// always revalidated.
+const assetVersions = new Map();
+for (const file of fs.readdirSync(pub)) {
+  if (/\.(js|css|svg)$/.test(file)) {
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(pub, file))).digest('hex').slice(0, 10);
+    assetVersions.set(file, hash);
+  }
+}
+function renderPage(file) {
+  return fs.readFileSync(path.join(pub, file), 'utf8').replace(
+    /(href|src)="\/([\w.-]+\.(?:js|css|svg))"/g,
+    (m, attr, name) => (assetVersions.has(name) ? `${attr}="/${name}?v=${assetVersions.get(name)}"` : m),
+  );
+}
+const pages = { index: renderPage('index.html'), admin: renderPage('admin.html') };
+const sendPage = (name, status = 200) => (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.status(status).type('html').send(pages[name]);
+};
+
+app.get(['/', '/index.html'], sendPage('index'));
+app.get(['/admin', '/admin.html'], sendPage('admin'));
+app.use(express.static(pub, {
+  index: false,
+  setHeaders(res) {
+    res.set('Cache-Control', res.req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache');
+  },
+}));
+app.use(sendPage('index', 404));
 
 const server = app.listen(config.port, config.host, () => {
   console.log(`WoW Forever tracker listening on http://${config.host}:${config.port} (polling every ${config.pollIntervalMs / 1000}s)`);
