@@ -161,6 +161,31 @@ docker compose pull cloudflared && docker compose up -d   # update cloudflared
 docker compose down                       # stop (data is kept in the volume)
 ```
 
+### Deploy automatically when you push to GitHub
+
+A systemd timer can check GitHub every 2 minutes and redeploy whenever `main` has new commits. It needs no
+open ports, webhook or GitHub setup. Install it once, from the checkout, with your normal account (it must
+own the checkout and be in the `docker` group):
+
+```bash
+cd ~/wow-forever-tracker
+git pull
+sudo bash deploy/install-auto-update.sh          # or: ... install-auto-update.sh 5min
+```
+
+The first run rebuilds once. After that, each check does a `git fetch`; if `main` moved, it fast-forwards
+and runs `docker compose up -d --build`, then waits for the app to report healthy. Commits that only touch
+`README.md`, `LICENSE` or `deploy/` don't trigger a rebuild. If a build fails, the old container keeps
+running and that commit isn't retried; push a fix, or run `FORCE=1 deploy/auto-update.sh`. If files were edited
+on the server, it refuses to pull and says so in the log.
+
+```bash
+journalctl -u wow-forever-update -f              # watch deploys
+systemctl list-timers wow-forever-update         # when the next check runs
+sudo systemctl start wow-forever-update          # check right now
+sudo bash deploy/install-auto-update.sh --uninstall
+```
+
 **Back up the roster:**
 
 ```bash
@@ -248,7 +273,7 @@ src/auth.js          Admin password login, signed session cookie, rate limiting
 src/stats.js         Activity feed and guild analytics
 src/visits.js        Cookieless visitor log for the admin Visitors panel
 public/              index.html (roster), admin.html, styles.css, *.js
-Dockerfile, docker-compose.yml, deploy/  Hosting
+Dockerfile, docker-compose.yml, deploy/  Hosting (deploy/auto-update.sh: redeploy on push)
 ```
 
 ## API endpoints
