@@ -10,6 +10,7 @@ const Store = require('./src/store');
 const { BlizzardClient, mapGuild, guildSlugFromName } = require('./src/blizzard');
 const Poller = require('./src/poller');
 const createAuth = require('./src/auth');
+const stats = require('./src/stats');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
@@ -229,7 +230,38 @@ app.get('/api/players', (req, res) => {
   res.json({
     players: store.list().filter((p) => !p.hidden).map((p) => publicPlayer(p, g, now)),
     guild: publicGuild(g),
+    recentActivity: stats.activity(statEntries(g), store.events, { limit: 3 }),
     ...pollInfo(),
+    serverTime: now,
+  });
+});
+
+/** Visible players in the shape src/stats.js works on. */
+function statEntries(g = store.meta.guild) {
+  return store.list().filter((p) => !p.hidden).map((p) => ({
+    id: p.id, firstName: p.firstName, surname: p.surname, nickname: p.nickname || '', slug: p.slug, region: p.region,
+    data: mergedData(p, g), levelHistory: p.levelHistory || [], loginHistory: p.loginHistory || [],
+  }));
+}
+
+// Activity feed, newest first. Page back with ?before=<timestamp of the last item>.
+app.get('/api/activity', (req, res) => {
+  const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
+  const before = Number(req.query.before) || Infinity;
+  res.set('Cache-Control', 'no-store');
+  res.json({ items: stats.activity(statEntries(), store.events, { limit, before }), serverTime: Date.now() });
+});
+
+app.get('/api/stats', (req, res) => {
+  const now = Date.now();
+  const entries = statEntries();
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    pace: stats.pace(entries, now),
+    trend: stats.trend(entries, now),
+    distribution: stats.distribution(entries),
+    heatmap: stats.heatmap(entries, now),
+    trackingSince: stats.trackingSince(entries),
     serverTime: now,
   });
 });

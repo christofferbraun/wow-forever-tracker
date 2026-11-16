@@ -128,5 +128,29 @@ window.WF = (() => {
     );
   }
 
-  return { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, MAX_LEVEL };
+  /** Character name in class color, followed by the nickname if there is one. */
+  function nameTag(item) {
+    const color = classColor(item);
+    return h('span.name-tag',
+      h('b', { style: color ? { color } : null }, item.name),
+      item.nickname ? h('span.nick', item.nickname) : null);
+  }
+
+  /** One line of the activity feed: level-up, milestone, max level, join or leave. */
+  function feedItem(item, now = Date.now()) {
+    let text;
+    if (item.type === 'join') text = ['joined the guild', item.level ? h('span.muted', ` · level ${item.level}`) : null];
+    else if (item.type === 'leave') text = 'left the guild';
+    else if (item.type === 'max') text = ['hit ', h('strong', `level ${item.level}`), '!'];
+    else if (item.type === 'milestone') text = ['reached ', h('strong', `level ${item.level}`)];
+    else if (item.gained > 1) text = [`gained ${item.gained} levels → `, h('strong', String(item.level))];
+    else text = ['reached level ', h('strong', String(item.level))];
+    return h(`li.feed-item.t-${item.type}`,
+      h('span.feed-icon', { 'aria-hidden': 'true' }),
+      h('span.feed-text', nameTag(item), ' ', text),
+      h('time.feed-time', { datetime: new Date(item.at).toISOString(), title: fullDate(item.at) }, ago(item.at, now)),
+    );
+  }
+
+  return { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, nameTag, feedItem, MAX_LEVEL };
 })();

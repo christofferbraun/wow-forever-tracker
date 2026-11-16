@@ -21,7 +21,18 @@
   </header>
 
   <main class="wrap">
+    <nav class="tabs" aria-label="Sections">
+      <a href="#roster" data-view="roster">Roster</a>
+      <a href="#activity" data-view="activity">Activity</a>
+      <a href="#stats" data-view="stats">Stats</a>
+    </nav>
+
+    <div class="view" id="view-roster">
     <section class="stats" id="stats" aria-label="Roster summary"></section>
+    <section class="card recent" id="recent" aria-label="Recent activity" hidden>
+      <div class="card-head"><h2>Recent activity</h2><a href="#activity">All activity →</a></div>
+      <ul class="feed" id="recent-list"></ul>
+    </section>
     <section class="class-mix" id="class-mix" aria-label="Class mix"></section>
 
     <section class="toolbar" aria-label="Filter and sort">
@@ -61,7 +72,40 @@
       <p class="empty" id="empty" hidden>No players on the roster yet.</p>
       <p class="more" id="more" hidden><button class="btn" id="show-more" type="button">Show more</button></p>
     </section>
+    </div>
+
+    <div class="view" id="view-activity" hidden>
+      <section class="card">
+        <div class="card-head"><h2>Guild activity</h2><span class="card-sub" id="feed-sub"></span></div>
+        <div id="feed"></div>
+        <p class="empty" id="feed-empty" hidden>No activity yet. Level-ups, joins and leaves show up here as they happen.</p>
+        <p class="more" id="feed-more-wrap" hidden><button class="btn" id="feed-more" type="button">Show older</button></p>
+      </section>
+    </div>
+
+    <div class="view" id="view-stats" hidden>
+      <section class="card">
+        <div class="card-head"><h2>Race to 60</h2><span class="card-sub" id="pace-sub"></span></div>
+        <div class="pace" id="pace" role="table" aria-label="Leveling pace"></div>
+        <p class="more" id="pace-more-wrap" hidden><button class="btn" id="pace-more" type="button">Show all</button></p>
+      </section>
+      <div class="card-grid">
+        <section class="card">
+          <div class="card-head"><h2>Average level</h2><span class="card-sub" id="trend-sub"></span></div>
+          <div class="chart" id="trend"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Level spread</h2><span class="card-sub" id="dist-sub"></span></div>
+          <div class="dist" id="dist"></div>
+        </section>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>When the guild logs off</h2><span class="card-sub" id="heat-sub"></span></div>
+        <div class="heat" id="heat"></div>
+      </section>
+    </div>
   </main>
+  <div class="tip" id="tip" role="tooltip" hidden></div>
 
   <footer class="foot">
     <span>Data from the Blizzard Battle.net API. Characters appear at level 10 after their first logout.</span>
@@ -70,5 +114,6 @@
 
   <script src="/common.js"></script>
   <script src="/app.js"></script>
+  <script src="/insights.js"></script>
 </body>
 </html>

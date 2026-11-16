@@ -261,6 +261,102 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
   .note-input, .nick-input { flex: 1; width: auto; min-width: 0; }
 }
 
+/* ---------- tabs ---------- */
+.tabs {
+  display: flex; gap: 4px; width: fit-content; margin: 0 auto 18px; padding: 4px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; backdrop-filter: blur(6px);
+}
+.tabs a { padding: 7px 20px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 14px; text-decoration: none; }
+.tabs a:hover { color: var(--text); text-decoration: none; }
+.tabs a[aria-current="page"] { background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo)); color: #1b1408; }
+.view[hidden] { display: none; }
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 18px; margin-bottom: 14px; backdrop-filter: blur(6px); min-width: 0;
+}
+.card[hidden] { display: none; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-head h2 { margin: 0; }
+.card-sub { color: var(--muted); font-size: 13px; }
+.card-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+.card-grid > .card { margin-bottom: 14px; }
+
+/* ---------- activity feed ---------- */
+.feed { list-style: none; margin: 0; padding: 0; }
+.feed-item { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.feed-item:first-child { border-top: 0; }
+.feed-icon { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--good); transform: translateY(-1px); }
+.t-milestone .feed-icon, .t-max .feed-icon { border-radius: 2px; transform: translateY(-1px) rotate(45deg); background: var(--gold); box-shadow: 0 0 8px rgba(230,194,122,.5); }
+.t-join .feed-icon { background: #9cc2ff; }
+.t-leave .feed-icon { background: var(--muted); }
+.feed-text { flex: 1; min-width: 0; }
+.feed-text strong { color: var(--gold-hi); font-weight: 600; }
+.t-max .feed-text strong { color: #ffd36b; }
+.t-leave .feed-text { color: var(--muted); }
+.feed-time { flex: none; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.name-tag b { font-weight: 600; }
+.name-tag .nick { margin-left: 5px; color: var(--muted); font-weight: 500; }
+.feed-day + .feed-day { margin-top: 12px; }
+.feed-date { margin: 0 0 2px; font: 600 12px var(--body); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.recent { padding: 10px 16px 6px; }
+.recent .card-head { margin-bottom: 2px; }
+.recent h2 { font-size: 15px; }
+.recent .card-head a { font-size: 13px; }
+.recent .feed-item { padding: 5px 0; font-size: 13.5px; }
+
+/* ---------- race to 60 ---------- */
+.pace-row {
+  display: grid; grid-template-columns: 30px minmax(0, 2.4fr) .7fr .8fr .8fr 1fr;
+  align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.pace-row.head { border-top: 0; padding-top: 0; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+.pace-rank { color: var(--muted); }
+.pace-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pace-level { font: 700 17px/1 var(--display); color: var(--gold-hi); }
+.pace-gained b { color: var(--good); font-weight: 600; }
+.pace-m { display: none; }
+
+/* ---------- charts ---------- */
+.chart { position: relative; min-height: 160px; }
+.chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.chart .grid { stroke: rgba(255,255,255,.07); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font: 11px var(--body); }
+.chart .line { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .area { fill: rgba(230,194,122,.10); }
+.chart .cross { stroke: rgba(230,194,122,.45); stroke-width: 1; }
+.chart .dot { fill: var(--gold-hi); stroke: var(--panel-solid); stroke-width: 2; }
+.chart-empty { color: var(--muted); margin: 0; padding: 50px 0; text-align: center; font-size: 13.5px; }
+
+.dist { display: flex; flex-direction: column; gap: 4px; }
+.dist-row { display: grid; grid-template-columns: 48px 1fr 30px; align-items: center; gap: 10px; padding: 3px 0; font-size: 13px; cursor: default; }
+.dist-label { color: var(--muted); font-variant-numeric: tabular-nums; }
+.dist-track { height: 14px; }
+.dist-bar { display: block; height: 100%; border-radius: 0 4px 4px 0; background: var(--gold); opacity: .85; }
+.dist-row:hover .dist-bar { opacity: 1; }
+.dist-count { text-align: right; font-variant-numeric: tabular-nums; }
+
+.heat { display: grid; grid-template-columns: 34px repeat(24, minmax(0, 1fr)); gap: 2px; }
+.heat-hour { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: visible; height: 16px; }
+.heat-day { font-size: 11px; color: var(--muted); align-self: center; }
+.heat-cell {
+  --a: 0;
+  height: 20px; border-radius: 3px;
+  background: rgba(255,255,255,.035);
+  box-shadow: inset 0 0 0 100px rgba(230, 194, 122, var(--a));
+}
+.heat-cell:hover { outline: 1px solid var(--gold-hi); }
+
+.tip {
+  position: fixed; z-index: 50; pointer-events: none; max-width: 260px;
+  padding: 7px 10px; border-radius: 8px; background: #0b1124; border: 1px solid var(--line-strong);
+  color: var(--text); font-size: 12.5px; line-height: 1.4; white-space: pre-line; box-shadow: 0 6px 24px rgba(0,0,0,.45);
+}
+.tip[hidden] { display: none; }
+
+
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.
    [avatar] Name ............... 45 ▬▬ +1
@@ -328,4 +424,35 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
   .m-meta .m-ding b { color: var(--good); }
 
   .foot { flex-direction: column; gap: 6px; padding: 6px 12px 28px; }
+
+  /* tabs + insights on phones */
+  .tabs { width: 100%; margin-bottom: 12px; }
+  .tabs a { flex: 1; text-align: center; padding: 6px 0; font-size: 13.5px; }
+  .card { padding: 12px; margin-bottom: 10px; border-radius: 12px; }
+  .card h2 { font-size: 16px; }
+  .card-grid { grid-template-columns: 1fr; gap: 0; }
+  .card-grid > .card { margin-bottom: 10px; }
+  .card-sub { font-size: 12px; }
+  .recent { padding: 8px 12px 4px; }
+  .feed-item { font-size: 13.5px; gap: 8px; padding: 6px 0; }
+  .feed-time { font-size: 12px; }
+
+  /* race to 60: [# name ..... level] / [+gained · per day · 60 by] */
+  .pace-row.head { display: none; }
+  .pace-row {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    grid-template-areas: "rank name level" ". stats stats";
+    gap: 1px 8px; padding: 7px 0; font-size: 13.5px;
+  }
+  .pace-rank { grid-area: rank; font-size: 12px; }
+  .pace-name { grid-area: name; }
+  .pace-level { grid-area: level; font-size: 16px; }
+  .pace-gained, .pace-rate, .pace-eta { display: none; }
+  .pace-m { display: block; grid-area: stats; font-size: 12.5px; color: var(--muted); }
+  .pace-m b { color: var(--text); font-weight: 500; }
+  .pace-m .up { color: var(--good); }
+  .heat { grid-template-columns: 28px repeat(24, minmax(0, 1fr)); gap: 1.5px; }
+  .heat-hour { font-size: 9.5px; }
+  .heat-day { font-size: 10px; }
+  .heat-cell { border-radius: 2px; height: auto; aspect-ratio: 1; }
 }

@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
+const MAX_EVENTS = 1000;
+
 /**
  * Tiny JSON-file store. The player list is small, so a single file written
  * atomically (temp file + rename) is simpler and sturdier than a database.
@@ -11,7 +13,7 @@ const crypto = require('node:crypto');
 class Store {
   constructor(dataDir) {
     this.file = path.join(dataDir, 'players.json');
-    this.state = { version: 1, players: [], meta: {} };
+    this.state = { version: 1, players: [], meta: {}, events: [] };
     this.load();
   }
 
@@ -22,6 +24,7 @@ class Store {
         version: 1,
         players: Array.isArray(raw.players) ? raw.players : [],
         meta: raw.meta && typeof raw.meta === 'object' ? raw.meta : {},
+        events: Array.isArray(raw.events) ? raw.events : [],
       };
     } catch (err) {
       if (err.code !== 'ENOENT') {
@@ -43,6 +46,13 @@ class Store {
   setMeta(patch) { Object.assign(this.state.meta, patch); this.save(); }
 
   list() { return this.state.players; }
+
+  /** Guild joins/leaves for the activity feed (level-ups come from each player's levelHistory). */
+  get events() { return this.state.events; }
+  addEvent(event) {
+    this.state.events.push(event);
+    if (this.state.events.length > MAX_EVENTS) this.state.events.splice(0, this.state.events.length - MAX_EVENTS);
+  }
   get(id) { return this.state.players.find((p) => p.id === id) || null; }
   findBySlug(region, slug) {
     return this.state.players.find((p) => p.region === region && p.slug === slug) || null;

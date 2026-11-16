@@ -5,6 +5,7 @@ const { RateLimitError, mapCharacter, mapMedia, mapRosterMember, mapGuild } = re
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const MAX_HISTORY = 120;
+const MAX_LOGINS = 300;                          // logout timestamps kept per character (activity heatmap)
 const PROFILE_MIN_LEVEL = 10;                    // Forever profiles 404 below level 10
 const GUILD_INFO_REFRESH_MS = 60 * 60 * 1000;    // guild summary (member count etc.) hourly
 const STATIC_REFRESH_MS = 24 * 60 * 60 * 1000;   // class/race names daily
@@ -208,6 +209,13 @@ class Poller {
           source: 'guild', firstName: r.name, surname: r.surname, slug: r.slug, region: g.region, note: '',
           status: 'roster', roster, levelHistory: updateHistory([], r.level, now),
         }, { persist: false });
+        // The first sync of a guild finds everyone, so only later additions count as joins.
+        if (g.rosterSyncedAt) {
+          this.store.addEvent({
+            type: 'join', at: now, region: g.region, slug: r.slug, name: r.name, surname: r.surname,
+            classId: r.classId, className: r.className, level: r.level,
+          });
+        }
       }
     }
 
@@ -216,7 +224,15 @@ class Poller {
       if (p.region !== g.region || seen.has(p.slug) || p.roster?.guildSlug !== g.slug) continue;
       if (p.source === 'guild') {
         const missingSince = p.missingSince || now;
-        if (now - missingSince >= MISSING_GRACE_MS) this.store.remove(p.id, { persist: false });
+        if (now - missingSince >= MISSING_GRACE_MS) {
+          this.store.remove(p.id, { persist: false });
+          this.store.addEvent({
+            type: 'leave', at: missingSince, region: p.region, slug: p.slug,
+            name: p.data?.name || p.firstName, surname: p.data?.surname || p.surname, nickname: p.nickname || '',
+            classId: p.data?.classId ?? p.roster?.classId ?? null, className: p.data?.className ?? p.roster?.className ?? null,
+            level: mergedLevel(p.data, p.roster),
+          });
+        }
         else this.store.update(p.id, { missingSince }, { persist: false });
       } else {
         this.store.update(p.id, { roster: null }, { persist: false }); // manually added: keep, just not in the guild any more
@@ -225,6 +241,7 @@ class Poller {
 
     g.status = 'ok';
     g.statusMessage = null;
+    g.rosterSyncedAt = now;
     g.memberCount = res.data.members.length;
     g.ranksSeen = [...ranks].sort((a, b) => a - b);
     this.store.save();
@@ -256,6 +273,9 @@ class Poller {
         if (data.name) patch.firstName = data.name;
         if (data.surname) patch.surname = data.surname;
         patch.levelHistory = updateHistory(p.levelHistory, mergedLevel(data, p.roster), now);
+        if (data.lastLogin && data.lastLogin !== p.data?.lastLogin) {
+          patch.loginHistory = [...(p.loginHistory || []), data.lastLogin].slice(-MAX_LOGINS);
+        }
         outcome = 'ok';
       } else if (res.status === 304) {
         patch.status = 'ok';

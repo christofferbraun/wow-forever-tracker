@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, MAX_LEVEL } = window.WF;
+  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, feedItem, MAX_LEVEL } = window.WF;
 
   const $ = (id) => document.getElementById(id);
   const PAGE = 150;
@@ -153,6 +153,11 @@
     $('show-more').textContent = `Show more (${list.length - state.limit} left)`;
   }
 
+  function renderRecent(items) {
+    $('recent').hidden = !items.length;
+    $('recent-list').replaceChildren(...items.map((it) => feedItem(it, now())));
+  }
+
   function renderPollStatus() {
     const poll = state.poll;
     if (!poll) return;
@@ -173,6 +178,7 @@
       state.poll = data;
       renderGuild();
       renderStats();
+      renderRecent(data.recentActivity || []);
       renderRows();
       renderPollStatus();
     } catch (err) {
