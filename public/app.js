@@ -100,6 +100,65 @@
         h('span.chip-dot', { 'aria-hidden': 'true' }), name, h('b', String(c.n))));
     $('class-mix').replaceChildren(...chips);
     $('class-mix').hidden = chips.length < 2;
+
+    renderOverview({ known, levels, avg, capped, top, dingsToday });
+    renderClassList(counts);
+  }
+
+  /** Wide layout: guild-wide numbers as a label/value list. */
+  function renderOverview({ known, levels, avg, capped, top, dingsToday }) {
+    const t = now();
+    const sorted = levels.slice().sort((a, b) => a - b);
+    const median = sorted.length ? (sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2) : null;
+    const loggedIn = (ms) => state.players.filter((p) => p.data?.lastLogin && t - p.data.lastLogin <= ms).length;
+    const ilvls = state.players.map((p) => p.data?.itemLevel).filter((v) => v != null);
+    const avgIlvl = ilvls.length ? (ilvls.reduce((a, b) => a + b, 0) / ilvls.length).toFixed(1) : null;
+    // People: characters grouped by the first word of their nickname ("Travis Mage Alt" -> Travis).
+    const nicked = state.players.filter((p) => p.nickname);
+    const people = new Set(state.players.map((p) => (p.nickname ? `n:${p.nickname.split(/\s+/)[0].replace(/[^\p{L}\p{N}]/gu, '').toLowerCase()}` : `c:${p.id}`)));
+    const week = state.guildWeek;
+    const weekLabel = week && week.days > 0 && week.days < 6.5 ? `Levels in ${Math.max(1, Math.round(week.days))} day${Math.round(week.days) > 1 ? 's' : ''}` : 'Levels this week';
+
+    const rows = [
+      [state.guild ? 'Characters' : 'Adventurers', String(state.players.length)],
+      nicked.length ? ['People', String(people.size), 'Characters grouped by the first word of their nickname'] : null,
+      ['Average level', String(avg)],
+      median != null ? ['Median level', String(median)] : null,
+      [`At level ${MAX_LEVEL}`, String(capped)],
+      ['Level 50+', String(levels.filter((l) => l >= 50).length)],
+      ['Levels today', String(dingsToday)],
+      week ? [weekLabel, String(week.levels), `${week.levelers} character${week.levelers === 1 ? '' : 's'} gained levels`] : null,
+      ['Played today', String(loggedIn(24 * 3600e3)), 'Logged out in the last 24 hours'],
+      ['Played this week', String(loggedIn(7 * 24 * 3600e3)), 'Logged out in the last 7 days'],
+      avgIlvl ? ['Avg item level', avgIlvl] : null,
+    ].filter(Boolean);
+    $('overview-list').replaceChildren(
+      ...rows.flatMap(([k, v, tip]) => [h('dt', { title: tip || null }, k), h('dd', v)]),
+      top ? h('div.kv-lead', h('span.kv-lead-label', 'Leading'), h('span.kv-lead-val', h('b', String(top.data.level)), ' ', nameTag({ ...top.data, name: displayName(top), nickname: top.nickname }))) : null,
+    );
+  }
+
+  /** Wide layout: class breakdown as a list with a thin bar; click to filter the roster. */
+  function renderClassList(counts) {
+    const entries = [...counts.entries()].sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
+    const total = entries.reduce((s, [, c]) => s + c.n, 0);
+    const max = Math.max(1, ...entries.map(([, c]) => c.n));
+    $('class-card-sub').textContent = state.minLevel ? `Level ${state.minLevel}+` : '';
+    $('class-list').replaceChildren(...entries.map(([name, c]) => {
+      const active = state.search.trim().toLowerCase() === name.toLowerCase();
+      return h('li', h('button.class-row', {
+        type: 'button', 'aria-pressed': active ? 'true' : 'false', style: c.color ? { '--class': c.color } : null,
+        title: active ? 'Show all classes' : `Show only ${name}s`,
+        onclick: () => {
+          const next = active ? '' : name;
+          $('search').value = next; state.search = next; state.limit = PAGE; renderRows(); renderClassList(counts);
+        },
+      },
+      h('span.class-name', name),
+      h('span.class-bar', h('span', { style: { width: `${(c.n / max) * 100}%` } })),
+      h('span.class-count', String(c.n)),
+      h('span.class-pct', total ? `${Math.round((c.n / total) * 100)}%` : '')));
+    }));
   }
 
   function row(p, i) {
@@ -186,6 +245,7 @@
       state.serverOffset = data.serverTime - Date.now();
       state.players = data.players;
       state.guild = data.guild;
+      state.guildWeek = data.guildWeek || null;
       state.poll = data;
       renderGuild();
       renderStats();

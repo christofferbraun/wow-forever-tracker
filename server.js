@@ -227,13 +227,19 @@ app.get('/api/players', (req, res) => {
   const now = Date.now();
   const g = store.meta.guild;
   const entries = statEntries(g);
+  const paceRows = stats.pace(entries, now);
   res.set('Cache-Control', 'no-store');
   res.json({
     players: store.list().filter((p) => !p.hidden).map((p) => publicPlayer(p, g, now)),
     guild: publicGuild(g),
     // Raw events; the page folds same-day level-ups together, so send enough to fill ~8 lines.
     recentActivity: stats.activity(entries, store.events, { limit: 60 }),
-    topLevelers: stats.pace(entries, now).filter((r) => r.gained > 0).slice(0, 5),
+    topLevelers: paceRows.filter((r) => r.gained > 0).slice(0, 5),
+    guildWeek: {
+      levels: paceRows.reduce((sum, r) => sum + r.gained, 0),
+      levelers: paceRows.filter((r) => r.gained > 0).length,
+      days: paceRows.reduce((max, r) => Math.max(max, r.windowDays), 0),
+    },
     ...pollInfo(),
     serverTime: now,
   });

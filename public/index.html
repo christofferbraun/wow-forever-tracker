@@ -31,6 +31,15 @@
     <aside class="side side-left">
       <section class="stats" id="stats" aria-label="Roster summary"></section>
       <section class="class-mix" id="class-mix" aria-label="Class mix"></section>
+      <!-- Wide layout only: the tiles and chips above become these two lists. -->
+      <section class="card side-list" id="overview" aria-label="Guild overview">
+        <div class="card-head"><h2>Guild overview</h2></div>
+        <dl class="kv" id="overview-list"></dl>
+      </section>
+      <section class="card side-list" id="class-card" aria-label="Classes">
+        <div class="card-head"><h2>Classes</h2><span class="card-sub" id="class-card-sub"></span></div>
+        <ul class="class-list" id="class-list"></ul>
+      </section>
     </aside>
     <aside class="side side-right">
       <section class="card recent" id="recent" aria-label="Recent activity" hidden>

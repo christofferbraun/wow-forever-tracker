@@ -91,7 +91,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
 .row {
   display: grid;
   grid-template-columns: 36px minmax(220px, 2.4fr) 1.3fr 1fr 1fr .8fr 1fr 1fr;
-  align-items: center; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--line);
+  align-items: center; gap: 12px; padding: 6px 16px; border-top: 1px solid var(--line);
 }
 .row.head {
   border-top: 0; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
@@ -103,8 +103,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
 
 .char { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .char-text { display: flex; flex-direction: column; min-width: 0; }
-.char-name { font-weight: 600; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.char-sub { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.char-name { font-weight: 600; font-size: 15px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.char-sub { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; line-height: 1.3; color: var(--muted); }
 .guild { color: #9fd3a0; }
 .note { color: var(--muted); font-style: italic; }
 .nick { color: var(--text); font-weight: 600; }
@@ -117,12 +117,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
   border: 2px solid var(--class); color: var(--class);
   font: 700 14px var(--display);
 }
-.avatar.md { width: 44px; height: 44px; }
+.avatar.md { width: 36px; height: 36px; border-radius: 8px; }
 .avatar.sm { width: 36px; height: 36px; font-size: 12px; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .level { display: flex; align-items: center; gap: 10px; }
-.lvl-num { font: 700 20px/1 var(--display); min-width: 28px; color: var(--gold-hi); font-variant-numeric: tabular-nums; }
+.lvl-num { font: 700 19px/1 var(--display); min-width: 28px; color: var(--gold-hi); font-variant-numeric: tabular-nums; }
 .bar { flex: 1; height: 6px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; min-width: 50px; }
 .fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi)); }
 .level.max .fill { background: linear-gradient(90deg, #f08a24, #ffd36b); box-shadow: 0 0 12px rgba(255, 200, 90, .6); }
@@ -371,6 +371,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 #view-roster .toolbar { order: 4; }
 #view-roster .roster { order: 5; }
 #top-week { display: none; }
+#overview, #class-card { display: none; }
 .recent .feed-item:nth-child(n+4) { display: none; }
 
 .top-list { list-style: none; margin: 0; padding: 0; counter-reset: top; }
@@ -410,6 +411,34 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 @media (prefers-reduced-motion: reduce) {
   .ms-badge, .ms-badge.ms-max, .t-max .feed-icon { animation: none; }
 }
+
+
+/* ---------- wide-layout side lists: guild overview + classes ---------- */
+.kv { display: grid; grid-template-columns: 1fr auto; margin: 0; font-size: 13.5px; }
+.kv dt, .kv dd { margin: 0; padding: 6px 0; border-top: 1px solid var(--line); }
+.kv dt:first-of-type, .kv dd:first-of-type { border-top: 0; }
+.kv dt { color: var(--muted); }
+.kv dt[title] { text-decoration: underline dotted rgba(143,149,168,.5); text-underline-offset: 3px; cursor: help; }
+.kv dd { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kv-lead { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 9px 0 2px; border-top: 1px solid var(--line-strong); }
+.kv-lead-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
+.kv-lead-val { font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kv-lead-val > b { font: 700 18px/1 var(--display); color: var(--gold-hi); margin-right: 4px; }
+
+.class-list { list-style: none; margin: 0; padding: 0; }
+.class-row {
+  --class: var(--gold);
+  display: grid; grid-template-columns: 78px 1fr 26px 36px; align-items: center; gap: 10px; width: 100%;
+  padding: 5px 6px; margin: 0 -6px; width: calc(100% + 12px); border: 0; border-radius: 7px; background: transparent;
+  font: 500 13.5px var(--body); color: var(--text); text-align: left; cursor: pointer;
+}
+.class-row:hover { background: rgba(255,255,255,.04); }
+.class-row[aria-pressed="true"] { background: rgba(230,194,122,.10); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.class-name { color: var(--class); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.class-bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.06); overflow: hidden; }
+.class-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--class); opacity: .8; }
+.class-count { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.class-pct { text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.
@@ -523,7 +552,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 
   #view-roster {
     display: grid; align-items: start; gap: 18px;
-    grid-template-columns: 260px minmax(0, 1fr) 330px;
+    grid-template-columns: minmax(300px, 19%) minmax(0, 1fr) minmax(330px, 21%);
     grid-template-areas: "left main right";
   }
   .side, .main-col { display: block; min-width: 0; }
@@ -532,16 +561,11 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
   .side-right { grid-area: right; }
   .side { position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; scrollbar-width: thin; }
 
-  .side-left .stats { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .side-left .stat { padding: 10px 12px; border-radius: 12px; }
-  .side-left .stat:last-child { grid-column: span 2; }
-  .side-left .stat-val { font-size: 22px; }
-  .side-left .stat-label { font-size: 10.5px; letter-spacing: .07em; }
-  .side-left .class-mix { margin: 0; gap: 6px; }
-  .side-left .chip { padding: 4px 10px; font-size: 12.5px; }
+  #view-roster #stats, #view-roster #class-mix { display: none; }
+  #overview, #class-card { display: block; }
+  .side .card { margin-bottom: 12px; padding: 14px 16px 10px; }
+  .side h2 { font-size: 16px; }
 
-  .side-right .card { margin-bottom: 12px; padding: 14px 16px 10px; }
-  .side-right h2 { font-size: 16px; }
   .side-right .card-head a { font-size: 12.5px; }
   .recent .feed-item:nth-child(n+4) { display: flex; }
   .recent .feed-item { font-size: 13px; }
