@@ -34,7 +34,7 @@
     if (state.rank !== '' && String(p.rank) !== state.rank) return false;
     if (!q) return true;
     const d = p.data || {};
-    return [displayName(p), p.note, d.guild, d.className, d.raceName, d.faction, d.ruleset, p.region, p.rankName]
+    return [displayName(p), p.nickname, p.note, d.guild, d.className, d.raceName, d.faction, d.ruleset, p.region, p.rankName]
       .some((v) => v && String(v).toLowerCase().includes(q));
   }
 
@@ -84,7 +84,7 @@
       stat('Average level', String(avg)),
       stat(`At level ${MAX_LEVEL}`, String(capped)),
       stat('Levels today', String(dingsToday)),
-      stat('Leading', top ? String(top.data.level) : '—', top ? displayName(top) : null),
+      stat('Leading', top ? String(top.data.level) : '—', top ? displayName(top) + (top.nickname ? ` (${top.nickname})` : '') : null),
     );
 
     // Class mix (respects the level filter so "who's at 60" is easy to see).
@@ -111,6 +111,7 @@
       h('div.char-text',
         h('span.char-name', { style: color ? { color } : null }, displayName(p)),
         h('span.char-sub',
+          p.nickname ? h('span.nick', p.nickname) : null,
           p.inGuild ? h('span.rank-name', p.rankName) : d.guild ? h('span.guild', `<${d.guild}>`) : null,
           p.note ? h('span.note', p.note) : null,
           p.hint ? h('span.pending', p.hint) : null,
@@ -126,9 +127,20 @@
       h('span.c-race', { 'data-label': 'Race' }, d.raceName || '—'),
       h('span.c-ilvl', { 'data-label': 'Item Level' }, d.itemLevel != null ? String(d.itemLevel) : '—'),
       h('span.c-login', { 'data-label': 'Last Login', title: fullDate(d.lastLogin) }, ago(d.lastLogin, now())),
-      h('span.c-ding', { 'data-label': 'Last Ding', title: p.lastDingAt ? `Last level-up: ${fullDate(p.lastDingAt)}` : null },
+      h(p.lastDingAt ? 'span.c-ding' : 'span.c-ding.none', { 'data-label': 'Last Ding', title: p.lastDingAt ? `Last level-up: ${fullDate(p.lastDingAt)}` : null },
         p.lastDingAt ? ago(p.lastDingAt, now()) : '—'),
+      // Phone layout only (hidden on desktop): race + class, and one compact info line.
+      h('span.m-rc', d.raceName || '', d.raceName && d.className ? ' ' : '', d.className ? h('span', { style: color ? { color } : null }, d.className) : null),
+      h('span.m-meta', ...mobileMeta(p, d)),
     );
+  }
+
+  function mobileMeta(p, d) {
+    const parts = [];
+    if (d.itemLevel != null) parts.push(h('span', 'Item Lvl ', h('b', String(d.itemLevel))));
+    if (d.lastLogin) parts.push(h('span', 'Login ', h('b', ago(d.lastLogin, now()))));
+    if (p.lastDingAt) parts.push(h('span.m-ding', 'Ding ', h('b', ago(p.lastDingAt, now()))));
+    return parts.flatMap((el, i) => (i ? [' · ', el] : [el]));
   }
 
   function renderRows() {

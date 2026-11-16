@@ -135,6 +135,7 @@ function publicPlayer(p, g, now = Date.now()) {
     surname: p.surname,
     region: p.region,
     note: p.note || '',
+    nickname: p.nickname || '',
     status: p.status,
     hint: hintFor(p, data),
     hasProfile: Boolean(p.data),
@@ -298,11 +299,43 @@ admin.post('/players/bulk', (req, res) => {
   res.json({ added: added.length, failed });
 });
 
+const tidyNickname = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, 32);
+
+// Bulk nicknames: { lines: "Character name = Nickname\n..." }
+// The name can be shortened (e.g. "Goramu" or "Stinklemor") as long as it matches
+// exactly one tracked character. An empty nickname clears it.
+admin.post('/nicknames', (req, res) => {
+  const lines = String(req.body?.lines ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 1000);
+  const fullName = (p) => `${p.data?.name || p.firstName} ${p.data?.surname || p.surname}`.trim().toLowerCase();
+  let updated = 0;
+  const failed = [];
+  for (const line of lines) {
+    const m = line.match(/^(.+?)\s*[=:\t]\s*(.*)$/);
+    if (!m) { failed.push({ line, error: 'Use "Character name = Nickname"' }); continue; }
+    const key = m[1].trim().replace(/\s+/g, ' ').toLowerCase();
+    let hits = store.list().filter((p) => fullName(p).startsWith(key));
+    if (hits.length > 1) {
+      const exact = hits.filter((p) => fullName(p) === key || String(p.firstName).toLowerCase() === key);
+      if (exact.length === 1) hits = exact;
+    }
+    if (!hits.length) { failed.push({ line, error: 'No tracked character matches' }); continue; }
+    if (hits.length > 1) {
+      failed.push({ line, error: `Matches ${hits.length} characters (${hits.slice(0, 3).map(fullName).join(', ')}); type more of the name` });
+      continue;
+    }
+    store.update(hits[0].id, { nickname: tidyNickname(m[2]) }, { persist: false });
+    updated++;
+  }
+  if (updated) store.save();
+  res.json({ updated, failed });
+});
+
 admin.patch('/players/:id', (req, res) => {
   const p = store.get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   const patch = {};
   if (req.body?.note !== undefined) patch.note = String(req.body.note).trim().slice(0, 80);
+  if (req.body?.nickname !== undefined) patch.nickname = tidyNickname(req.body.nickname);
   if (req.body?.hidden !== undefined) patch.hidden = Boolean(req.body.hidden);
   if (req.body?.region !== undefined) {
     if (p.source === 'guild') return res.status(400).json({ error: "Guild members use the guild's region" });

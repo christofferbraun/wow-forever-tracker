@@ -171,7 +171,7 @@
     const q = $('admin-search').value.trim().toLowerCase();
     const show = $('admin-show').value;
     return players.filter((p) => {
-      if (q && !displayName(p).toLowerCase().includes(q)) return false;
+      if (q && !`${displayName(p)} ${p.nickname || ''}`.toLowerCase().includes(q)) return false;
       if (show === 'manual') return p.source !== 'guild';
       if (show === 'guild') return p.source === 'guild';
       if (show === 'hidden') return p.hidden;
@@ -198,6 +198,11 @@
     const d = p.data || {};
     const color = classColor(d);
     const fromGuild = p.source === 'guild';
+    const nickInput = h('input.nick-input', { value: p.nickname || '', maxlength: 32, placeholder: 'Nickname', 'aria-label': `Nickname for ${displayName(p)}` });
+    nickInput.addEventListener('change', async () => {
+      try { await api(`/api/admin/players/${p.id}`, { method: 'PATCH', body: { nickname: nickInput.value } }); p.nickname = nickInput.value.trim(); }
+      catch (err) { alertInline(err.message); }
+    });
     const noteInput = h('input.note-input', { value: p.note, maxlength: 80, placeholder: 'Note', 'aria-label': `Note for ${displayName(p)}` });
 
     noteInput.addEventListener('change', async () => {
@@ -258,7 +263,7 @@
         ),
         p.rawStatusMessage && p.status !== 'ok' ? h('span.admin-err', p.rawStatusMessage) : null,
       ),
-      h('div.admin-controls', noteInput, regionCtl, refreshBtn, actionBtn),
+      h('div.admin-controls', nickInput, noteInput, regionCtl, refreshBtn, actionBtn),
     );
   }
 
@@ -332,6 +337,18 @@
       if (r.added) { $('bulk-lines').value = r.failed.map((f) => f.line).join('\n'); setTimeout(refresh, 2500); refresh(); }
     } catch (err) {
       flash('bulk-msg', err.message);
+    }
+  });
+
+  $('bulk-nicks').addEventListener('click', async () => {
+    try {
+      const r = await api('/api/admin/nicknames', { method: 'POST', body: { lines: $('nick-lines').value } });
+      const fails = r.failed.map((f) => `• ${f.line}: ${f.error}`).join('\n');
+      flash('nick-msg', `Updated ${r.updated}.${fails ? '\n' + fails : ''}`, r.failed.length ? 'warn' : 'ok');
+      $('nick-lines').value = r.failed.map((f) => f.line).join('\n');
+      if (r.updated) refresh();
+    } catch (err) {
+      flash('nick-msg', err.message);
     }
   });
 

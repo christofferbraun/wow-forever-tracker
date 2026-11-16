@@ -88,7 +88,7 @@
       <section class="panel">
         <h2>Players <span class="count" id="player-count"></span></h2>
         <div class="toolbar">
-          <input type="search" id="admin-search" placeholder="Filter by name…" autocomplete="off" aria-label="Filter players">
+          <input type="search" id="admin-search" placeholder="Filter by name or nickname…" autocomplete="off" aria-label="Filter players">
           <label class="sort"><span>Show</span>
             <select id="admin-show">
               <option value="all">All</option>
@@ -99,6 +99,13 @@
             </select>
           </label>
         </div>
+        <details class="bulk nick-bulk">
+          <summary>Set nicknames in bulk</summary>
+          <p class="hint">One per line: <code>Character name = Nickname</code>. A shortened name works if it matches only one character, e.g. <code>Goramu = Sean</code>. Leave the nickname empty to clear it.</p>
+          <textarea id="nick-lines" rows="6" spellcheck="false"></textarea>
+          <button class="btn" id="bulk-nicks" type="button">Save nicknames</button>
+          <p class="msg" id="nick-msg" role="alert"></p>
+        </details>
         <div id="admin-list" class="admin-list"></div>
         <p class="more" id="admin-more" hidden><button class="btn" id="admin-show-more" type="button">Show more</button></p>
       </section>
