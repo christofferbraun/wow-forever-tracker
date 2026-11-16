@@ -13,9 +13,7 @@
 <body>
   <div class="sky" aria-hidden="true"></div>
   <header class="hero">
-    <p class="eyebrow">World of Warcraft: Forever</p>
     <h1 id="site-title">WoW Forever Roster</h1>
-    <p id="site-subtitle" class="subtitle"></p>
     <div id="guild-banner" class="guild-banner" hidden></div>
     <p class="poll-status" id="poll-status" aria-live="polite">Loading…</p>
   </header>
@@ -27,13 +25,24 @@
       <a href="#stats" data-view="stats">Stats</a>
     </nav>
 
+    <!-- Wide screens: [summary | roster | activity] columns. Elsewhere the asides use
+         display: contents and CSS order stacks everything as one column. -->
     <div class="view" id="view-roster">
-    <section class="stats" id="stats" aria-label="Roster summary"></section>
-    <section class="card recent" id="recent" aria-label="Recent activity" hidden>
-      <div class="card-head"><h2>Recent activity</h2><a href="#activity">All activity →</a></div>
-      <ul class="feed" id="recent-list"></ul>
-    </section>
-    <section class="class-mix" id="class-mix" aria-label="Class mix"></section>
+    <aside class="side side-left">
+      <section class="stats" id="stats" aria-label="Roster summary"></section>
+      <section class="class-mix" id="class-mix" aria-label="Class mix"></section>
+    </aside>
+    <aside class="side side-right">
+      <section class="card recent" id="recent" aria-label="Recent activity" hidden>
+        <div class="card-head"><h2>Recent activity</h2><a href="#activity">All activity →</a></div>
+        <ul class="feed" id="recent-list"></ul>
+      </section>
+      <section class="card top-week" id="top-week" aria-label="Top levelers this week" hidden>
+        <div class="card-head"><h2>Top levelers</h2><a href="#stats">Stats →</a></div>
+        <ol class="top-list" id="top-week-list"></ol>
+      </section>
+    </aside>
+    <div class="main-col">
 
     <section class="toolbar" aria-label="Filter and sort">
       <input type="search" id="search" placeholder="Search name, nickname, class, rank…" autocomplete="off" aria-label="Search">
@@ -73,6 +82,7 @@
       <p class="more" id="more" hidden><button class="btn" id="show-more" type="button">Show more</button></p>
     </section>
     </div>
+    </div>
 
     <div class="view" id="view-activity" hidden>
       <section class="card">
@@ -88,6 +98,7 @@
         <div class="card-head"><h2>Race to 60</h2><span class="card-sub" id="pace-sub"></span></div>
         <div class="pace" id="pace" role="table" aria-label="Leveling pace"></div>
         <p class="more" id="pace-more-wrap" hidden><button class="btn" id="pace-more" type="button">Show all</button></p>
+        <p class="pace-note">“Level 60 by” allows for later levels taking longer: each character's last 7 days are measured against the XP every level needs and how fast XP comes in at that level, then projected over what's left.</p>
       </section>
       <div class="card-grid">
         <section class="card">

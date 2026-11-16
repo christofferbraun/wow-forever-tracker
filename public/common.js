@@ -136,21 +136,59 @@ window.WF = (() => {
       item.nickname ? h('span.nick', item.nickname) : null);
   }
 
-  /** One line of the activity feed: level-up, milestone, max level, join or leave. */
+  const LEVEL_TYPES = new Set(['ding', 'milestone', 'max']);
+  const localDay = (t) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+
+  /**
+   * Folds each character's level-ups on the same (local) day into one entry:
+   * { type, from, level, gained, milestones: [20, 30, ...] }. Feed must be newest first.
+   * type becomes 'max' if 60 was reached, 'milestone' if any multiple of 10 was, else 'ding'.
+   */
+  function condenseFeed(items) {
+    const out = [];
+    const groups = new Map();
+    for (const it of items) {
+      if (!LEVEL_TYPES.has(it.type)) { out.push(it); continue; }
+      const from = it.level - (it.gained || 1);
+      const key = `${localDay(it.at)}|${it.playerId || it.name}`;
+      let g = groups.get(key);
+      if (!g) {
+        g = { ...it, from, milestones: [] };
+        groups.set(key, g);
+        out.push(g);
+      } else {
+        g.from = Math.min(g.from, from);
+        g.level = Math.max(g.level, it.level);
+        g.at = Math.max(g.at, it.at);
+      }
+      for (let l = from + 1; l <= it.level; l++) if (l % 10 === 0 && !g.milestones.includes(l)) g.milestones.push(l);
+    }
+    for (const g of groups.values()) {
+      g.gained = g.level - g.from;
+      g.milestones.sort((a, b) => b - a);
+      g.type = g.milestones[0] >= MAX_LEVEL ? 'max' : g.milestones.length ? 'milestone' : 'ding';
+    }
+    return out;
+  }
+
+  /** One line of the (condensed) activity feed: level-ups, milestone, max level, join or leave. */
   function feedItem(item, now = Date.now()) {
     let text;
     if (item.type === 'join') text = ['joined the guild', item.level ? h('span.muted', ` · level ${item.level}`) : null];
     else if (item.type === 'leave') text = 'left the guild';
-    else if (item.type === 'max') text = ['hit ', h('strong', `level ${item.level}`), '!'];
-    else if (item.type === 'milestone') text = ['reached ', h('strong', `level ${item.level}`)];
     else if (item.gained > 1) text = [`gained ${item.gained} levels → `, h('strong', String(item.level))];
     else text = ['reached level ', h('strong', String(item.level))];
+
+    let badge = null;
+    if (item.type === 'max') badge = h('span.ms-badge.ms-max', 'Level 60 · Max level');
+    else if (item.type === 'milestone') badge = h('span.ms-badge', `Level ${item.milestones?.[0] ?? item.level}`);
+
     return h(`li.feed-item.t-${item.type}`,
       h('span.feed-icon', { 'aria-hidden': 'true' }),
-      h('span.feed-text', nameTag(item), ' ', text),
+      h('span.feed-text', nameTag(item), ' ', text, badge ? [' ', badge] : null),
       h('time.feed-time', { datetime: new Date(item.at).toISOString(), title: fullDate(item.at) }, ago(item.at, now)),
     );
   }
 
-  return { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, nameTag, feedItem, MAX_LEVEL };
+  return { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, nameTag, feedItem, condenseFeed, MAX_LEVEL };
 })();

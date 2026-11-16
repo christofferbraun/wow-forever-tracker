@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, feedItem, MAX_LEVEL } = window.WF;
+  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, feedItem, condenseFeed, nameTag, MAX_LEVEL } = window.WF;
 
   const $ = (id) => document.getElementById(id);
   const PAGE = 150;
@@ -153,9 +153,20 @@
     $('show-more').textContent = `Show more (${list.length - state.limit} left)`;
   }
 
+  // 8 lines are rendered; narrow layouts show the first 3 (see .recent in styles.css).
   function renderRecent(items) {
-    $('recent').hidden = !items.length;
-    $('recent-list').replaceChildren(...items.map((it) => feedItem(it, now())));
+    const lines = condenseFeed(items).slice(0, 8);
+    $('recent').hidden = !lines.length;
+    $('recent-list').replaceChildren(...lines.map((it) => feedItem(it, now())));
+  }
+
+  // Wide layout only: this week's top 5 by levels gained.
+  function renderTopLevelers(rows) {
+    $('top-week').hidden = !rows.length;
+    $('top-week-list').replaceChildren(...rows.map((r) => h('li',
+      h('span.top-name', nameTag(r)),
+      h('span.top-gain', `+${r.gained}`),
+      h('span.top-level', String(r.level)))));
   }
 
   function renderPollStatus() {
@@ -179,6 +190,7 @@
       renderGuild();
       renderStats();
       renderRecent(data.recentActivity || []);
+      renderTopLevelers(data.topLevelers || []);
       renderRows();
       renderPollStatus();
     } catch (err) {
@@ -190,7 +202,6 @@
     try {
       const site = await api('/api/site');
       $('site-title').textContent = site.title;
-      $('site-subtitle').textContent = site.subtitle;
       document.title = site.title;
     } catch { /* keep defaults */ }
   }

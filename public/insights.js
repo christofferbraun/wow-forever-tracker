@@ -2,11 +2,12 @@
 
 /* Tabs (Roster / Activity / Stats) plus the Activity and Stats views. */
 (() => {
-  const { h, ago, fullDate, api, feedItem, nameTag, MAX_LEVEL } = window.WF;
+  const { h, ago, fullDate, api, feedItem, condenseFeed, nameTag, MAX_LEVEL } = window.WF;
   const $ = (id) => document.getElementById(id);
   const VIEWS = ['roster', 'activity', 'stats'];
   const HOUR = 3600e3, DAY = 24 * HOUR;
   const PACE_TOP = 10;
+  const PAGE = 150; // raw feed events per request (same-day level-ups are folded together on screen)
 
   let view = 'roster';
   let serverOffset = 0;
@@ -73,7 +74,7 @@
 
   function renderFeed(hasMore) {
     const groups = [];
-    for (const it of feedItems) {
+    for (const it of condenseFeed(feedItems)) {
       const label = dayLabel(it.at);
       if (!groups.length || groups[groups.length - 1].label !== label) groups.push({ label, items: [] });
       groups[groups.length - 1].items.push(it);
@@ -89,17 +90,17 @@
   async function loadFeed(reset) {
     try {
       const before = !reset && feedItems.length ? feedItems[feedItems.length - 1].at : '';
-      const data = await api(`/api/activity?limit=50${before ? `&before=${before}` : ''}`);
+      const data = await api(`/api/activity?limit=${PAGE}${before ? `&before=${before}` : ''}`);
       serverOffset = data.serverTime - Date.now();
       // On a refresh, keep however many older items were already loaded.
       if (reset) {
-        const keep = Math.max(50, feedItems.length);
+        const keep = Math.max(PAGE, feedItems.length);
         feedItems = data.items.length < keep && feedItems.length > data.items.length
           ? mergeFeed(data.items, feedItems).slice(0, keep) : data.items;
       } else {
         feedItems = feedItems.concat(data.items);
       }
-      renderFeed(data.items.length === 50);
+      renderFeed(data.items.length === PAGE);
     } catch (err) {
       $('feed-sub').textContent = `Couldn't load activity (${err.message})`;
     }
@@ -157,7 +158,10 @@
       const perDay = r.perDay == null ? '—' : r.perDay >= 10 ? r.perDay.toFixed(0) : r.perDay.toFixed(1);
       let eta = '—';
       if (r.level >= MAX_LEVEL) eta = 'Max level';
-      else if (r.eta && r.eta - now() < 365 * DAY) eta = shortDate(r.eta);
+      else if (r.eta && r.eta - now() < 365 * DAY) {
+        eta = new Date(r.eta).getFullYear() === new Date(now()).getFullYear() ? shortDate(r.eta)
+          : new Date(r.eta).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      }
       return h('div.pace-row', { role: 'row' },
         h('span.pace-rank', String(i + 1)),
         h('span.pace-name', nameTag(r)),

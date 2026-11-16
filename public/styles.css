@@ -318,6 +318,8 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 .pace-level { font: 700 17px/1 var(--display); color: var(--gold-hi); }
 .pace-gained b { color: var(--good); font-weight: 600; }
 .pace-m { display: none; }
+.pace-note { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.more + .pace-note { margin-top: 0; }
 
 /* ---------- charts ---------- */
 .chart { position: relative; min-height: 160px; }
@@ -356,6 +358,58 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 }
 .tip[hidden] { display: none; }
 
+
+/* ---------- roster view: one column by default ----------
+   The asides only exist for the wide layout; here they dissolve (display: contents)
+   and `order` stacks: summary, recent activity, class chips, filters, roster. */
+#view-roster { display: flex; flex-direction: column; }
+#view-roster[hidden] { display: none; }
+.side, .main-col { display: contents; }
+#stats { order: 1; }
+#recent { order: 2; }
+#class-mix { order: 3; }
+#view-roster .toolbar { order: 4; }
+#view-roster .roster { order: 5; }
+#top-week { display: none; }
+.recent .feed-item:nth-child(n+4) { display: none; }
+
+.top-list { list-style: none; margin: 0; padding: 0; counter-reset: top; }
+.top-list li {
+  counter-increment: top; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto 26px; gap: 8px;
+  align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13.5px;
+}
+.top-list li:first-child { border-top: 0; }
+.top-list li::before { content: counter(top); color: var(--muted); font-size: 12px; }
+.top-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-gain { color: var(--good); font-weight: 600; font-variant-numeric: tabular-nums; }
+.top-level { font: 700 15px/1 var(--display); color: var(--gold-hi); text-align: right; }
+
+/* ---------- milestone level-ups: make them shine ---------- */
+.feed-item.t-milestone, .feed-item.t-max {
+  margin: 2px -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; border-top-color: transparent;
+  background: linear-gradient(90deg, rgba(230, 194, 122, .14), rgba(230, 194, 122, .03) 70%, transparent);
+}
+.feed-item.t-milestone + .feed-item, .feed-item.t-max + .feed-item { border-top-color: transparent; }
+.feed-item.t-max { background: linear-gradient(90deg, rgba(255, 170, 60, .22), rgba(255, 200, 90, .05) 70%, transparent); box-shadow: inset 0 0 0 1px rgba(255, 200, 90, .25); }
+.t-max .feed-icon { background: #ffd36b; box-shadow: 0 0 10px rgba(255, 200, 90, .9); animation: ms-pulse 1.8s ease-in-out infinite; }
+.ms-badge {
+  display: inline-block; vertical-align: 1px; padding: 1px 9px; border-radius: 999px; white-space: nowrap;
+  font: 700 11px/1.5 var(--body); letter-spacing: .06em; text-transform: uppercase; color: #241805;
+  background: linear-gradient(110deg, #b8893a 0%, #f6dc9b 35%, #fff6d8 50%, #f6dc9b 65%, #b8893a 100%);
+  background-size: 250% 100%; animation: ms-shimmer 3.2s linear infinite;
+  box-shadow: 0 0 12px rgba(246, 220, 155, .35);
+}
+.ms-badge.ms-max {
+  background: linear-gradient(110deg, #e0701a 0%, #ffd36b 35%, #fff4cf 50%, #ffd36b 65%, #e0701a 100%);
+  background-size: 250% 100%; box-shadow: 0 0 16px rgba(255, 190, 80, .6);
+  animation: ms-shimmer 2.2s linear infinite, ms-glow 1.8s ease-in-out infinite;
+}
+@keyframes ms-shimmer { from { background-position: 125% 0; } to { background-position: -125% 0; } }
+@keyframes ms-glow { 50% { box-shadow: 0 0 24px rgba(255, 190, 80, .95); } }
+@keyframes ms-pulse { 50% { transform: translateY(-1px) rotate(45deg) scale(1.35); } }
+@media (prefers-reduced-motion: reduce) {
+  .ms-badge, .ms-badge.ms-max, .t-max .feed-icon { animation: none; }
+}
 
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.
@@ -455,4 +509,49 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
   .heat-hour { font-size: 9.5px; }
   .heat-day { font-size: 10px; }
   .heat-cell { border-radius: 2px; height: auto; aspect-ratio: 1; }
+}
+
+/* ---------- wide desktop (16:9 and similar): roster in the middle, extras on the sides ----------
+   Only when the window is both wide and landscape; tall or narrow windows keep the stacked layout. */
+@media (min-width: 1500px) and (min-aspect-ratio: 4/3) {
+  .hero { padding: 18px 20px 4px; }
+  h1 { font-size: 38px; }
+  .guild-banner { margin-top: 8px; }
+  .poll-status { margin-top: 10px; }
+  .tabs { margin-bottom: 14px; }
+  .wrap { max-width: 1880px; }
+
+  #view-roster {
+    display: grid; align-items: start; gap: 18px;
+    grid-template-columns: 260px minmax(0, 1fr) 330px;
+    grid-template-areas: "left main right";
+  }
+  .side, .main-col { display: block; min-width: 0; }
+  .side-left { grid-area: left; }
+  .main-col { grid-area: main; }
+  .side-right { grid-area: right; }
+  .side { position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; scrollbar-width: thin; }
+
+  .side-left .stats { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .side-left .stat { padding: 10px 12px; border-radius: 12px; }
+  .side-left .stat:last-child { grid-column: span 2; }
+  .side-left .stat-val { font-size: 22px; }
+  .side-left .stat-label { font-size: 10.5px; letter-spacing: .07em; }
+  .side-left .class-mix { margin: 0; gap: 6px; }
+  .side-left .chip { padding: 4px 10px; font-size: 12.5px; }
+
+  .side-right .card { margin-bottom: 12px; padding: 14px 16px 10px; }
+  .side-right h2 { font-size: 16px; }
+  .side-right .card-head a { font-size: 12.5px; }
+  .recent .feed-item:nth-child(n+4) { display: flex; }
+  .recent .feed-item { font-size: 13px; }
+  #top-week:not([hidden]) { display: block; }
+
+  #view-activity .card { max-width: 980px; margin-left: auto; margin-right: auto; }
+
+  #view-stats { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
+  #view-stats[hidden] { display: none; }
+  #view-stats > .card:first-child { grid-column: 1; grid-row: 1 / span 2; }
+  #view-stats > .card-grid { grid-column: 2; grid-row: 1; grid-template-columns: 1fr; gap: 0; }
+  #view-stats > .card:last-child { grid-column: 2; grid-row: 2; }
 }
