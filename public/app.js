@@ -117,24 +117,24 @@
     const nicked = state.players.filter((p) => p.nickname);
     const people = new Set(state.players.map((p) => (p.nickname ? `n:${p.nickname.split(/\s+/)[0].replace(/[^\p{L}\p{N}]/gu, '').toLowerCase()}` : `c:${p.id}`)));
     const week = state.guildWeek;
-    const weekLabel = week && week.days > 0 && week.days < 6.5 ? `Levels in ${Math.max(1, Math.round(week.days))} day${Math.round(week.days) > 1 ? 's' : ''}` : 'Levels this week';
 
+    // Related numbers share a row ("a / b") so the card stays short enough for the
+    // whole left column to fit on a 1080p screen without scrolling.
+    const weekTip = week
+      ? `Today = last 24 hours. Week: ${week.levelers} character${week.levelers === 1 ? '' : 's'} gained levels${week.days > 0 && week.days < 6.5 ? `; tracking began ${Math.max(1, Math.round(week.days))} day${Math.round(week.days) > 1 ? 's' : ''} ago` : ' in the last 7 days'}`
+      : 'Levels gained in the last 24 hours';
     const rows = [
       [state.guild ? 'Characters' : 'Adventurers', String(state.players.length)],
       nicked.length ? ['People', String(people.size), 'Characters grouped by the first word of their nickname'] : null,
-      ['Average level', String(avg)],
-      median != null ? ['Median level', String(median)] : null,
-      [`At level ${MAX_LEVEL}`, String(capped)],
-      ['Level 50+', String(levels.filter((l) => l >= 50).length)],
-      ['Levels today', String(dingsToday)],
-      week ? [weekLabel, String(week.levels), `${week.levelers} character${week.levelers === 1 ? '' : 's'} gained levels`] : null,
-      ['Played today', String(loggedIn(24 * 3600e3)), 'Logged out in the last 24 hours'],
-      ['Played this week', String(loggedIn(7 * 24 * 3600e3)), 'Logged out in the last 7 days'],
+      median != null ? ['Avg / median level', `${avg} / ${median}`] : ['Average level', String(avg)],
+      [`At level ${MAX_LEVEL} / 50+`, `${capped} / ${levels.filter((l) => l >= 50).length}`],
+      week ? ['Levels today / week', `${dingsToday} / ${week.levels}`, weekTip] : ['Levels today', String(dingsToday)],
+      ['Played today / week', `${loggedIn(24 * 3600e3)} / ${loggedIn(7 * 24 * 3600e3)}`, 'Characters that logged out in the last 24 hours / 7 days'],
       avgIlvl ? ['Avg item level', avgIlvl] : null,
     ].filter(Boolean);
     $('overview-list').replaceChildren(
       ...rows.flatMap(([k, v, tip]) => [h('dt', { title: tip || null }, k), h('dd', v)]),
-      top ? h('div.kv-lead', h('span.kv-lead-label', 'Leading'), h('span.kv-lead-val', h('b', String(top.data.level)), ' ', nameTag({ ...top.data, name: displayName(top), nickname: top.nickname }))) : null,
+      ...(top ? [h('dt', 'Leading'), h('dd.kv-lead', h('b', String(top.data.level)), ' ', nameTag({ ...top.data, name: displayName(top), nickname: '' }))] : []),
     );
   }
 
@@ -237,16 +237,23 @@
       .filter((x) => x.ms >= SHAME_MIN);
     const wall = away.filter((x) => x.ms <= ABANDONED).sort((a, b) => b.ms - a.ms);
     const abandoned = away.length - wall.length;
-    $('shame-list').replaceChildren(...(wall.length ? wall.map(({ p, ms }) => {
+    // The header card stays a fixed size: the 5 longest offline, then a count of the rest.
+    const SHOWN = 5;
+    const more = wall.slice(SHOWN);
+    $('shame-list').replaceChildren(...(wall.length ? wall.slice(0, SHOWN).map(({ p, ms }) => {
       const sev = ms >= 10 * 24 * 3600e3 ? 3 : ms >= 5 * 24 * 3600e3 ? 2 : 1;
       return h('li',
         h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
         h('span.shame-level', String(p.data.level)),
         h(`span.shame-time.sev-${sev}`, { title: `Last seen ${fullDate(p.data.lastLogin)}` }, offlineFor(ms)));
     }) : [h('li.shame-empty', 'Nobody is slacking. Everyone has played in the last 2 days.')]));
-    $('shame-foot').textContent = abandoned
-      ? `${abandoned} abandoned (offline 14+ days) not shown`
-      : '';
+    const foot = [];
+    if (more.length) {
+      foot.push(h('span', { title: more.map(({ p, ms }) => `${displayName(p)}${p.nickname ? ` (${p.nickname})` : ''} · ${offlineFor(ms)}`).join('\n') },
+        `+${more.length} more offline`));
+    }
+    if (abandoned) foot.push(h('span', { title: 'Offline 14+ days. They come back here once they log in again.' }, `${abandoned} abandoned`));
+    $('shame-foot').replaceChildren(...foot.flatMap((el, i) => (i ? [' · ', el] : [el])));
   }
 
   // Wide layout only: who is closest to their next multiple of 10. Nearest first; ties go to

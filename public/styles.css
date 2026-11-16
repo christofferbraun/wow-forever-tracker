@@ -415,23 +415,22 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 
 
 /* ---------- wide-layout side lists: guild overview + classes ---------- */
-.kv { display: grid; grid-template-columns: 1fr auto; margin: 0; font-size: 13.5px; }
-.kv dt, .kv dd { margin: 0; padding: 6px 0; border-top: 1px solid var(--line); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); margin: 0; font-size: 13px; }
+.kv dt, .kv dd { margin: 0; padding: 4px 0; line-height: 1.45; border-top: 1px solid var(--line); }
+.kv dt { white-space: nowrap; }
 .kv dt:first-of-type, .kv dd:first-of-type { border-top: 0; }
 .kv dt { color: var(--muted); }
 .kv dt[title] { text-decoration: underline dotted rgba(143,149,168,.5); text-underline-offset: 3px; cursor: help; }
-.kv dd { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-.kv-lead { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 9px 0 2px; border-top: 1px solid var(--line-strong); }
-.kv-lead-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
-.kv-lead-val { font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kv-lead-val > b { font: 700 18px/1 var(--display); color: var(--gold-hi); margin-right: 4px; }
+.kv dd { padding-left: 12px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kv dd.kv-lead { font-weight: 400; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kv-lead > b { font: 700 15px/1 var(--display); color: var(--gold-hi); margin-right: 2px; }
 
 .class-list { list-style: none; margin: 0; padding: 0; }
 .class-row {
   --class: var(--gold);
   display: grid; grid-template-columns: 78px 1fr 26px 36px; align-items: center; gap: 10px; width: 100%;
-  padding: 5px 6px; margin: 0 -6px; width: calc(100% + 12px); border: 0; border-radius: 7px; background: transparent;
-  font: 500 13.5px var(--body); color: var(--text); text-align: left; cursor: pointer;
+  padding: 3px 6px; margin: 0 -6px; width: calc(100% + 12px); border: 0; border-radius: 6px; background: transparent;
+  font: 500 13px/1.45 var(--body); color: var(--text); text-align: left; cursor: pointer;
 }
 .class-row:hover { background: rgba(255,255,255,.04); }
 .class-row[aria-pressed="true"] { background: rgba(230,194,122,.10); box-shadow: inset 0 0 0 1px var(--line-strong); }
@@ -446,7 +445,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 .shame { margin: 0; padding: 12px 16px 10px; }
 .shame .card-head { margin-bottom: 4px; }
 .shame h2 { font-size: 15px; }
-.shame-list { list-style: none; margin: 0; padding: 0; max-height: 132px; overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable; }
+.shame-list { list-style: none; margin: 0; padding: 0; }
 .shame-list li {
   display: grid; grid-template-columns: minmax(0, 1fr) 24px 58px; gap: 10px; align-items: baseline;
   padding: 4px 0; border-top: 1px solid var(--line); font-size: 13px;
@@ -459,7 +458,8 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 .shame-time.sev-2 { color: #ff9d5c; }
 .shame-time.sev-3 { color: var(--bad); }
 li.shame-empty { display: block; color: var(--muted); font-size: 13px; padding: 10px 0; }
-.shame-foot { margin: 6px 0 0; color: var(--muted); font-size: 11.5px; }
+.shame-foot { margin: 4px 0 0; color: var(--muted); font-size: 11.5px; }
+.shame-foot [title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
 .shame-foot:empty { display: none; }
 
 
@@ -610,7 +610,8 @@ li.mini-empty { display: block; color: var(--muted); padding: 10px 0; }
 
   #view-roster #stats, #view-roster #class-mix { display: none; }
   #overview, #class-card { display: block; }
-  .side .card { margin-bottom: 12px; padding: 14px 16px 10px; }
+  .side .card { margin-bottom: 12px; padding: 12px 16px 8px; }
+  .side .card-head { margin-bottom: 4px; }
   .side h2 { font-size: 16px; }
 
   .side-right .card-head a { font-size: 12.5px; }
