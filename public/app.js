@@ -219,6 +219,36 @@
     $('recent-list').replaceChildren(...lines.map((it) => feedItem(it, now())));
   }
 
+  // Wide layout only: "XP waste" wall. Characters not seen for 2+ days, longest first.
+  // Over 14 days counts as abandoned and drops off until the character logs in again;
+  // level 60s can't waste XP, so they're left out.
+  const SHAME_MIN = 2 * 24 * 3600e3;
+  const ABANDONED = 14 * 24 * 3600e3;
+  function offlineFor(ms) {
+    const hours = Math.floor(ms / 3600e3);
+    const days = Math.floor(hours / 24);
+    return days >= 10 ? `${days}d` : `${days}d ${hours % 24}h`;
+  }
+  function renderShame() {
+    const t = now();
+    const away = state.players
+      .filter((p) => p.data?.lastLogin && (p.data.level ?? 0) < MAX_LEVEL)
+      .map((p) => ({ p, ms: t - p.data.lastLogin }))
+      .filter((x) => x.ms >= SHAME_MIN);
+    const wall = away.filter((x) => x.ms <= ABANDONED).sort((a, b) => b.ms - a.ms);
+    const abandoned = away.length - wall.length;
+    $('shame-list').replaceChildren(...(wall.length ? wall.map(({ p, ms }) => {
+      const sev = ms >= 10 * 24 * 3600e3 ? 3 : ms >= 5 * 24 * 3600e3 ? 2 : 1;
+      return h('li',
+        h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
+        h('span.shame-level', String(p.data.level)),
+        h(`span.shame-time.sev-${sev}`, { title: `Last seen ${fullDate(p.data.lastLogin)}` }, offlineFor(ms)));
+    }) : [h('li.shame-empty', 'Nobody is slacking. Everyone has played in the last 2 days.')]));
+    $('shame-foot').textContent = abandoned
+      ? `${abandoned} abandoned (offline 14+ days) not shown`
+      : '';
+  }
+
   // Wide layout only: this week's top 5 by levels gained.
   function renderTopLevelers(rows) {
     $('top-week').hidden = !rows.length;
@@ -250,6 +280,7 @@
       renderGuild();
       renderStats();
       renderRecent(data.recentActivity || []);
+      renderShame();
       renderTopLevelers(data.topLevelers || []);
       renderRows();
       renderPollStatus();

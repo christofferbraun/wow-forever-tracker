@@ -12,18 +12,29 @@
 </head>
 <body>
   <div class="sky" aria-hidden="true"></div>
-  <header class="hero">
-    <h1 id="site-title">WoW Forever Roster</h1>
-    <div id="guild-banner" class="guild-banner" hidden></div>
-    <p class="poll-status" id="poll-status" aria-live="polite">Loading…</p>
-  </header>
+  <!-- Wide screens: [hall of shame | title + tabs | (free)] above the three content columns. -->
+  <div class="top">
+    <aside class="top-side top-left">
+      <section class="card shame" id="shame" aria-label="XP waste hall of shame">
+        <div class="card-head"><h2>XP waste · Hall of shame</h2><span class="card-sub">Offline 2+ days</span></div>
+        <ol class="shame-list" id="shame-list"></ol>
+        <p class="shame-foot" id="shame-foot"></p>
+      </section>
+    </aside>
+    <header class="hero">
+      <h1 id="site-title">WoW Forever Roster</h1>
+      <div id="guild-banner" class="guild-banner" hidden></div>
+      <p class="poll-status" id="poll-status" aria-live="polite">Loading…</p>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#roster" data-view="roster">Roster</a>
+        <a href="#activity" data-view="activity">Activity</a>
+        <a href="#stats" data-view="stats">Stats</a>
+      </nav>
+    </header>
+    <aside class="top-side top-right"></aside>
+  </div>
 
   <main class="wrap">
-    <nav class="tabs" aria-label="Sections">
-      <a href="#roster" data-view="roster">Roster</a>
-      <a href="#activity" data-view="activity">Activity</a>
-      <a href="#stats" data-view="stats">Stats</a>
-    </nav>
 
     <!-- Wide screens: [summary | roster | activity] columns. Elsewhere the asides use
          display: contents and CSS order stacks everything as one column. -->

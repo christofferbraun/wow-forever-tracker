@@ -43,7 +43,8 @@ code { background: rgba(255,255,255,.06); padding: .1em .35em; border-radius: 4p
 }
 
 /* ---------- header ---------- */
-.hero { text-align: center; padding: 56px 20px 28px; }
+.hero { text-align: center; padding: 48px 20px 20px; }
+.top-side { display: none; }
 .hero.small { padding: 36px 20px 12px; }
 .eyebrow {
   margin: 0 0 8px; font: 600 12px/1 var(--body); letter-spacing: .28em; text-transform: uppercase; color: var(--gold);
@@ -263,7 +264,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 
 /* ---------- tabs ---------- */
 .tabs {
-  display: flex; gap: 4px; width: fit-content; margin: 0 auto 18px; padding: 4px;
+  display: flex; gap: 4px; width: fit-content; margin: 16px auto 0; padding: 4px;
   background: var(--panel); border: 1px solid var(--line); border-radius: 999px; backdrop-filter: blur(6px);
 }
 .tabs a { padding: 7px 20px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 14px; text-decoration: none; }
@@ -440,6 +441,27 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 .class-count { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .class-pct { text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 
+
+/* ---------- XP waste hall of shame (wide layout header) ---------- */
+.shame { margin: 0; padding: 12px 16px 10px; }
+.shame .card-head { margin-bottom: 4px; }
+.shame h2 { font-size: 15px; }
+.shame-list { list-style: none; margin: 0; padding: 0; max-height: 132px; overflow-y: auto; scrollbar-width: thin; }
+.shame-list li {
+  display: grid; grid-template-columns: minmax(0, 1fr) 24px 58px; gap: 10px; align-items: baseline;
+  padding: 4px 0; border-top: 1px solid var(--line); font-size: 13px;
+}
+.shame-list li:first-child { border-top: 0; }
+.shame-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shame-level { font: 700 14px/1 var(--display); color: var(--gold-hi); text-align: right; }
+.shame-time { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shame-time.sev-1 { color: var(--warn); }
+.shame-time.sev-2 { color: #ff9d5c; }
+.shame-time.sev-3 { color: var(--bad); }
+li.shame-empty { display: block; color: var(--muted); font-size: 13px; padding: 10px 0; }
+.shame-foot { margin: 6px 0 0; color: var(--muted); font-size: 11.5px; }
+.shame-foot:empty { display: none; }
+
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.
    [avatar] Name ............... 45 ▬▬ +1
@@ -509,7 +531,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
   .foot { flex-direction: column; gap: 6px; padding: 6px 12px 28px; }
 
   /* tabs + insights on phones */
-  .tabs { width: 100%; margin-bottom: 12px; }
+  .tabs { width: 100%; margin: 10px 0 0; }
   .tabs a { flex: 1; text-align: center; padding: 6px 0; font-size: 13.5px; }
   .card { padding: 12px; margin-bottom: 10px; border-radius: 12px; }
   .card h2 { font-size: 16px; }
@@ -543,11 +565,17 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 /* ---------- wide desktop (16:9 and similar): roster in the middle, extras on the sides ----------
    Only when the window is both wide and landscape; tall or narrow windows keep the stacked layout. */
 @media (min-width: 1500px) and (min-aspect-ratio: 4/3) {
-  .hero { padding: 18px 20px 4px; }
+  /* Header row lines up with the content columns: [hall of shame | title + tabs | free] */
+  .top {
+    display: grid; align-items: start; gap: 18px; max-width: 1880px; margin: 0 auto; padding: 14px 20px 14px;
+    grid-template-columns: minmax(300px, 19%) minmax(0, 1fr) minmax(330px, 21%);
+  }
+  .top-side { display: block; min-width: 0; }
+  .hero { padding: 6px 0 4px; }
   h1 { font-size: 38px; }
   .guild-banner { margin-top: 8px; }
   .poll-status { margin-top: 10px; }
-  .tabs { margin-bottom: 14px; }
+  .tabs { margin-top: 12px; }
   .wrap { max-width: 1880px; }
 
   #view-roster {
