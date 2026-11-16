@@ -446,7 +446,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 .shame { margin: 0; padding: 12px 16px 10px; }
 .shame .card-head { margin-bottom: 4px; }
 .shame h2 { font-size: 15px; }
-.shame-list { list-style: none; margin: 0; padding: 0; max-height: 132px; overflow-y: auto; scrollbar-width: thin; }
+.shame-list { list-style: none; margin: 0; padding: 0; max-height: 132px; overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable; }
 .shame-list li {
   display: grid; grid-template-columns: minmax(0, 1fr) 24px 58px; gap: 10px; align-items: baseline;
   padding: 4px 0; border-top: 1px solid var(--line); font-size: 13px;
@@ -461,6 +461,25 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 li.shame-empty { display: block; color: var(--muted); font-size: 13px; padding: 10px 0; }
 .shame-foot { margin: 6px 0 0; color: var(--muted); font-size: 11.5px; }
 .shame-foot:empty { display: none; }
+
+
+/* ---------- next milestones (wide layout header, right) ---------- */
+.next-ms { margin: 0; padding: 12px 16px 10px; }
+.next-ms .card-head { margin-bottom: 4px; }
+.next-ms h2 { font-size: 15px; }
+.mini-list { list-style: none; margin: 0; padding: 0; }
+.mini-list li {
+  display: grid; grid-template-columns: minmax(0, 1fr) 62px 56px; gap: 10px; align-items: baseline;
+  padding: 4px 0; border-top: 1px solid var(--line); font-size: 13px;
+}
+.mini-list li:first-child { border-top: 0; }
+.mini-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-step { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ms-step b { font: 700 14px/1 var(--display); color: var(--gold-hi); }
+.ms-arrow { margin: 0 4px; opacity: .7; }
+.ms-togo { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ms-togo.ms-close { color: var(--gold-hi); font-weight: 600; }
+li.mini-empty { display: block; color: var(--muted); padding: 10px 0; }
 
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.

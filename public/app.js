@@ -249,6 +249,29 @@
       : '';
   }
 
+  // Wide layout only: who is closest to their next multiple of 10. Nearest first; ties go to
+  // whoever is leveling right now (levels today, then most recent level-up). Skips 60s and
+  // abandoned characters, same rules as the hall of shame.
+  function renderNextMilestones() {
+    const t = now();
+    const rows = state.players
+      .filter((p) => p.data?.level != null && p.data.level < MAX_LEVEL)
+      .filter((p) => !p.data.lastLogin || t - p.data.lastLogin <= ABANDONED)
+      .map((p) => {
+        const level = p.data.level;
+        const next = Math.floor(level / 10) * 10 + 10;
+        return { p, level, next, toGo: next - level };
+      })
+      .sort((a, b) => a.toGo - b.toGo || (b.p.levelsToday || 0) - (a.p.levelsToday || 0)
+        || (b.p.lastDingAt || 0) - (a.p.lastDingAt || 0) || b.level - a.level)
+      .slice(0, 5);
+    $('next-ms-list').replaceChildren(...(rows.length ? rows.map(({ p, level, next, toGo }) => h('li',
+      h('span.mini-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
+      h('span.ms-step', String(level), h('span.ms-arrow', '→'), h('b', String(next))),
+      h(`span.ms-togo${toGo === 1 ? '.ms-close' : ''}`, toGo === 1 ? '1 level' : `${toGo} levels`),
+    )) : [h('li.mini-empty', 'Everyone tracked is already level 60.')]));
+  }
+
   // Wide layout only: this week's top 5 by levels gained.
   function renderTopLevelers(rows) {
     $('top-week').hidden = !rows.length;
@@ -281,6 +304,7 @@
       renderStats();
       renderRecent(data.recentActivity || []);
       renderShame();
+      renderNextMilestones();
       renderTopLevelers(data.topLevelers || []);
       renderRows();
       renderPollStatus();
