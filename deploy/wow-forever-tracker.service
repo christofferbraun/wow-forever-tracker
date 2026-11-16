@@ -1,0 +1,27 @@
+# Bare-metal alternative to Docker.  Install with:
+#   sudo cp deploy/wow-forever-tracker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now wow-forever-tracker
+[Unit]
+Description=WoW Forever Roster
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wowtracker
+Group=wowtracker
+WorkingDirectory=/opt/wow-forever-tracker
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/wow-forever-tracker/data
+
+[Install]
+WantedBy=multi-user.target

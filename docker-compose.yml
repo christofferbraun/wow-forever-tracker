@@ -1,0 +1,47 @@
+# WoW Forever Roster + Cloudflare Tunnel
+#
+#   1. cp .env.example .env   and fill in Blizzard creds, ADMIN_PASSWORD and TUNNEL_TOKEN
+#   2. docker compose up -d --build
+#
+# No ports are published on the host: cloudflared reaches the app over the
+# internal Docker network at http://app:3000, and the public reaches cloudflared
+# through Cloudflare. In the Cloudflare dashboard, point your public hostname's
+# service at  http://app:3000
+
+services:
+  app:
+    build: .
+    image: wow-forever-tracker:latest
+    container_name: wow-forever-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATA_DIR: /app/data
+    volumes:
+      - roster-data:/app/data
+    # Uncomment to reach the site directly at http://<server-ip>:3000 for testing:
+    # ports:
+    #   - "127.0.0.1:3000:3000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: wow-forever-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env}
+    depends_on:
+      app:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  roster-data:

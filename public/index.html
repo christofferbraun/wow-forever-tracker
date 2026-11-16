@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WoW Forever Roster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="sky" aria-hidden="true"></div>
+  <header class="hero">
+    <p class="eyebrow">World of Warcraft: Forever</p>
+    <h1 id="site-title">WoW Forever Roster</h1>
+    <p id="site-subtitle" class="subtitle"></p>
+    <div id="guild-banner" class="guild-banner" hidden></div>
+    <p class="poll-status" id="poll-status" aria-live="polite">Loading…</p>
+  </header>
+
+  <main class="wrap">
+    <section class="stats" id="stats" aria-label="Roster summary"></section>
+    <section class="class-mix" id="class-mix" aria-label="Class mix"></section>
+
+    <section class="toolbar" aria-label="Filter and sort">
+      <input type="search" id="search" placeholder="Search name, guild, class, rank…" autocomplete="off" aria-label="Search">
+      <label class="sort">
+        <span>Level</span>
+        <select id="min-level">
+          <option value="0">All</option>
+          <option value="10">10+</option>
+          <option value="30">30+</option>
+          <option value="50">50+</option>
+          <option value="60">60</option>
+        </select>
+      </label>
+      <label class="sort" id="rank-filter-wrap" hidden>
+        <span>Rank</span>
+        <select id="rank-filter"><option value="">All</option></select>
+      </label>
+      <label class="sort">
+        <span>Sort</span>
+        <select id="sort">
+          <option value="level">Level</option>          <option value="name">Name</option>
+          <option value="class">Class</option>
+          <option value="ilvl">Item level</option>
+          <option value="login">Last login</option>
+          <option value="ding">Last level-up</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="roster" aria-label="Players">
+      <div class="row head" role="row">
+        <span>#</span><span>Character</span><span>Level</span><span>Class</span><span>Race</span>
+        <span>Faction</span><span>Ruleset</span><span>iLvl</span><span>Last login</span>
+      </div>
+      <div id="rows"></div>
+      <p class="empty" id="empty" hidden>No players on the roster yet.</p>
+      <p class="more" id="more" hidden><button class="btn" id="show-more" type="button">Show more</button></p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Data from the Blizzard Battle.net API. Characters appear at level 10 after their first logout.</span>
+    <a href="/admin">Admin</a>
+  </footer>
+
+  <script src="/common.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

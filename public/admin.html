@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Admin · WoW Forever Roster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body class="admin">
+  <div class="sky" aria-hidden="true"></div>
+  <header class="hero small">
+    <p class="eyebrow"><a href="/">← Back to roster</a></p>
+    <h1>Roster Admin</h1>
+  </header>
+
+  <main class="wrap">
+    <!-- Login -->
+    <section class="panel" id="login-panel" hidden>
+      <h2>Sign in</h2>
+      <form id="login-form" class="stack">
+        <label>Admin password
+          <input type="password" id="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="btn primary">Sign in</button>
+        <p class="msg" id="login-msg" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- Admin -->
+    <div id="admin-panel" hidden>
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Status</h2>
+          <div class="btns">
+            <button class="btn" id="refresh-all">Refresh all now</button>
+            <button class="btn ghost" id="logout">Sign out</button>
+          </div>
+        </div>
+        <div id="status" class="status-grid"></div>
+        <p class="msg" id="status-msg" role="status"></p>
+      </section>
+
+      <section class="panel" id="guild-panel">
+        <h2>Guild</h2>
+        <p class="hint">Track a whole guild: its roster syncs every poll, members are added and removed automatically, and each level-10+ member's full profile is fetched on a slower schedule. You can still add players outside the guild below.</p>
+        <div id="guild-info"></div>
+        <form id="guild-form" class="guild-grid">
+          <label>Guild name<input id="guild-name" required maxlength="40" placeholder="Legends of Azeroth" autocomplete="off"></label>
+          <label>Region<select id="guild-region"></select></label>
+          <label><span>Slug <small>(optional)</small></span><input id="guild-slug" maxlength="64" placeholder="auto" autocomplete="off" spellcheck="false"></label>
+          <button type="submit" class="btn primary" id="guild-submit">Track guild</button>
+        </form>
+        <p class="msg" id="guild-msg" role="alert"></p>
+        <div id="rank-editor" hidden>
+          <h3>Rank names</h3>
+          <p class="hint">Blizzard only provides rank numbers. Name them here; blank uses the default.</p>
+          <div id="rank-fields" class="rank-grid"></div>
+          <button class="btn" id="save-ranks" type="button">Save rank names</button>
+          <p class="msg" id="rank-msg" role="status"></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Add a player</h2>
+        <form id="add-form" class="add-grid">
+          <label>First name<input id="first" required maxlength="25" placeholder="Anduin" autocomplete="off"></label>
+          <label>Surname<input id="last" maxlength="12" placeholder="Wrynn" autocomplete="off"></label>
+          <label>Region<select id="region"></select></label>
+          <label class="wide"><span>Note <small>(optional, shown publicly)</small></span><input id="note" maxlength="80" placeholder="Chris's main" autocomplete="off"></label>
+          <button type="submit" class="btn primary">Add player</button>
+        </form>
+        <p class="msg" id="add-msg" role="alert"></p>
+
+        <details class="bulk">
+          <summary>Add several at once</summary>
+          <p class="hint">One per line: <code>First Surname [region] [note]</code> — e.g. <code>Anduin Wrynn eu King of Stormwind</code></p>
+          <textarea id="bulk-lines" rows="5" spellcheck="false"></textarea>
+          <button class="btn" id="bulk-add">Add all</button>
+          <p class="msg" id="bulk-msg" role="alert"></p>
+        </details>
+      </section>
+
+      <section class="panel">
+        <h2>Players <span class="count" id="player-count"></span></h2>
+        <div class="toolbar">
+          <input type="search" id="admin-search" placeholder="Filter by name…" autocomplete="off" aria-label="Filter players">
+          <label class="sort"><span>Show</span>
+            <select id="admin-show">
+              <option value="all">All</option>
+              <option value="manual">Added by hand</option>
+              <option value="guild">From guild</option>
+              <option value="hidden">Hidden</option>
+              <option value="problems">Not found / errors</option>
+            </select>
+          </label>
+        </div>
+        <div id="admin-list" class="admin-list"></div>
+        <p class="more" id="admin-more" hidden><button class="btn" id="admin-show-more" type="button">Show more</button></p>
+      </section>
+    </div>
+  </main>
+
+  <script src="/common.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>
