@@ -372,7 +372,7 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 #view-roster .toolbar { order: 4; }
 #view-roster .roster { order: 5; }
 #top-week { display: none; }
-#overview, #class-card { display: none; }
+#overview, #class-card, #gh-card { display: none; }
 .recent .feed-item:nth-child(n+4) { display: none; }
 
 .top-list { list-style: none; margin: 0; padding: 0; counter-reset: top; }
@@ -457,7 +457,6 @@ h3 { font: 600 15px var(--display); color: var(--gold); margin: 18px 0 4px; }
 .shame-time.sev-1 { color: var(--warn); }
 .shame-time.sev-2 { color: #ff9d5c; }
 .shame-time.sev-3 { color: var(--bad); }
-li.shame-empty { display: block; color: var(--muted); font-size: 13px; padding: 10px 0; }
 .shame-foot { margin: 4px 0 0; color: var(--muted); font-size: 11.5px; }
 .shame-foot [title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
 .shame-foot:empty { display: none; }
@@ -479,7 +478,23 @@ li.shame-empty { display: block; color: var(--muted); font-size: 13px; padding: 
 .ms-arrow { margin: 0 4px; opacity: .7; }
 .ms-togo { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ms-togo.ms-close { color: var(--gold-hi); font-weight: 600; }
-li.mini-empty { display: block; color: var(--muted); padding: 10px 0; }
+li.row-empty { display: block; color: var(--muted); font-size: 12.5px; }
+li.row-ph { display: block; color: transparent; user-select: none; }
+
+
+/* ---------- GitHub link (wide layout, bottom of the left column) ---------- */
+.gh-card {
+  align-items: center; gap: 12px; padding: 12px 16px; color: var(--text); text-decoration: none;
+  transition: border-color .15s, background .15s;
+}
+.gh-card:hover { border-color: var(--line-strong); background: rgba(230,194,122,.06); color: var(--text); text-decoration: none; }
+.gh-icon { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--gold); background: rgba(230,194,122,.10); border: 1px solid var(--line); }
+.gh-text { display: flex; flex-direction: column; min-width: 0; font-size: 13.5px; line-height: 1.35; }
+.gh-text b { font-weight: 600; }
+.gh-text span { color: var(--muted); font-size: 12px; }
+.gh-arrow { margin-left: auto; color: var(--muted); font-size: 16px; }
+.gh-card:hover .gh-arrow { color: var(--gold); }
+.foot-links { white-space: nowrap; }
 
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.
@@ -586,10 +601,14 @@ li.mini-empty { display: block; color: var(--muted); padding: 10px 0; }
 @media (min-width: 1500px) and (min-aspect-ratio: 4/3) {
   /* Header row lines up with the content columns: [hall of shame | title + tabs | free] */
   .top {
-    display: grid; align-items: start; gap: 18px; max-width: 1880px; margin: 0 auto; padding: 14px 20px 14px;
+    display: grid; align-items: stretch; gap: 18px; max-width: 1880px; margin: 0 auto; padding: 14px 20px 14px;
     grid-template-columns: minmax(300px, 19%) minmax(0, 1fr) minmax(330px, 21%);
   }
   .top-side { display: block; min-width: 0; }
+  /* Header cards fill the whole header row height; the list takes the slack. */
+  .top-side > .card { height: 100%; display: flex; flex-direction: column; }
+  .top-side .shame-list, .top-side .mini-list { flex: 1; }
+  .top-side .shame-foot { margin-top: auto; padding-top: 4px; }
   .hero { padding: 6px 0 4px; }
   h1 { font-size: 38px; }
   .guild-banner { margin-top: 8px; }
@@ -610,6 +629,7 @@ li.mini-empty { display: block; color: var(--muted); padding: 10px 0; }
 
   #view-roster #stats, #view-roster #class-mix { display: none; }
   #overview, #class-card { display: block; }
+  #gh-card { display: flex; }
   .side .card { margin-bottom: 12px; padding: 12px 16px 8px; }
   .side .card-head { margin-bottom: 4px; }
   .side h2 { font-size: 16px; }

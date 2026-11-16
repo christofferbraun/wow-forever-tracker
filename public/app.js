@@ -238,22 +238,32 @@
     const wall = away.filter((x) => x.ms <= ABANDONED).sort((a, b) => b.ms - a.ms);
     const abandoned = away.length - wall.length;
     // The header card stays a fixed size: the 5 longest offline, then a count of the rest.
-    const SHOWN = 5;
-    const more = wall.slice(SHOWN);
-    $('shame-list').replaceChildren(...(wall.length ? wall.slice(0, SHOWN).map(({ p, ms }) => {
+    const more = wall.slice(HEADER_ROWS);
+    $('shame-list').replaceChildren(...padRows(wall.slice(0, HEADER_ROWS).map(({ p, ms }) => {
       const sev = ms >= 10 * 24 * 3600e3 ? 3 : ms >= 5 * 24 * 3600e3 ? 2 : 1;
       return h('li',
         h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
         h('span.shame-level', String(p.data.level)),
         h(`span.shame-time.sev-${sev}`, { title: `Last seen ${fullDate(p.data.lastLogin)}` }, offlineFor(ms)));
-    }) : [h('li.shame-empty', 'Nobody is slacking. Everyone has played in the last 2 days.')]));
+    }), 'Nobody is slacking. Everyone has played in the last 2 days.'));
     const foot = [];
     if (more.length) {
       foot.push(h('span', { title: more.map(({ p, ms }) => `${displayName(p)}${p.nickname ? ` (${p.nickname})` : ''} · ${offlineFor(ms)}`).join('\n') },
         `+${more.length} more offline`));
     }
     if (abandoned) foot.push(h('span', { title: 'Offline 14+ days. They come back here once they log in again.' }, `${abandoned} abandoned`));
+    if (!foot.length) foot.push(wall.length ? 'That\'s everyone offline 2+ days' : 'Wall of shame is empty');
     $('shame-foot').replaceChildren(...foot.flatMap((el, i) => (i ? [' · ', el] : [el])));
+  }
+
+  // Both header cards always show HEADER_ROWS lines so they keep the same shape; spare
+  // lines are blank placeholders, and an empty list puts its message on the first one.
+  const HEADER_ROWS = 5;
+  function padRows(items, emptyMessage) {
+    const out = items.slice();
+    if (!out.length) out.push(h('li.row-empty', emptyMessage));
+    while (out.length < HEADER_ROWS) out.push(h('li.row-ph', { 'aria-hidden': 'true' }, ' '));
+    return out;
   }
 
   // Wide layout only: who is closest to their next multiple of 10. Nearest first; ties go to
@@ -261,7 +271,7 @@
   // abandoned characters, same rules as the hall of shame.
   function renderNextMilestones() {
     const t = now();
-    const rows = state.players
+    const all = state.players
       .filter((p) => p.data?.level != null && p.data.level < MAX_LEVEL)
       .filter((p) => !p.data.lastLogin || t - p.data.lastLogin <= ABANDONED)
       .map((p) => {
@@ -270,13 +280,16 @@
         return { p, level, next, toGo: next - level };
       })
       .sort((a, b) => a.toGo - b.toGo || (b.p.levelsToday || 0) - (a.p.levelsToday || 0)
-        || (b.p.lastDingAt || 0) - (a.p.lastDingAt || 0) || b.level - a.level)
-      .slice(0, 5);
-    $('next-ms-list').replaceChildren(...(rows.length ? rows.map(({ p, level, next, toGo }) => h('li',
+        || (b.p.lastDingAt || 0) - (a.p.lastDingAt || 0) || b.level - a.level);
+    $('next-ms-list').replaceChildren(...padRows(all.slice(0, HEADER_ROWS).map(({ p, level, next, toGo }) => h('li',
       h('span.mini-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
       h('span.ms-step', String(level), h('span.ms-arrow', '→'), h('b', String(next))),
       h(`span.ms-togo${toGo === 1 ? '.ms-close' : ''}`, toGo === 1 ? '1 level' : `${toGo} levels`),
-    )) : [h('li.mini-empty', 'Everyone tracked is already level 60.')]));
+    )), 'Everyone tracked is already level 60.'));
+    const oneAway = all.filter((r) => r.toGo === 1).length;
+    $('next-ms-foot').textContent = oneAway
+      ? `${oneAway} character${oneAway === 1 ? ' is' : 's are'} one level from a milestone`
+      : all.length ? 'Nobody is one level away right now' : '';
   }
 
   // Wide layout only: this week's top 5 by levels gained.
