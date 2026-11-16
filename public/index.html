@@ -29,6 +29,9 @@
         <a href="#roster" data-view="roster">Roster</a>
         <a href="#activity" data-view="activity">Activity</a>
         <a href="#stats" data-view="stats">Stats</a>
+        <!-- Only when the header cards beside the title aren't shown (phones, narrow or tall windows). -->
+        <a href="#shame" data-view="shame" class="tab-narrow">Shame</a>
+        <a href="#milestones" data-view="milestones" class="tab-narrow">Milestones</a>
       </nav>
       <a class="card gh-card" id="gh-card" href="https://github.com/christofferbraun/wow-forever-tracker" target="_blank" rel="noopener">
         <span class="gh-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
@@ -121,6 +124,24 @@
         <div id="feed"></div>
         <p class="empty" id="feed-empty" hidden>No activity yet. Level-ups, joins and leaves show up here as they happen.</p>
         <p class="more" id="feed-more-wrap" hidden><button class="btn" id="feed-more" type="button">Show older</button></p>
+      </section>
+    </div>
+
+    <div class="view list-view" id="view-shame" hidden>
+      <section class="card shame">
+        <div class="card-head"><h2>XP waste · Hall of shame</h2><span class="card-sub" id="shame-all-sub">Offline 2+ days, longest first</span></div>
+        <ol class="shame-list" id="shame-all"></ol>
+        <div id="abandoned-wrap" hidden>
+          <h3 class="list-sub">Abandoned <span class="card-sub">Offline 14+ days · back on the wall once they log in</span></h3>
+          <ol class="shame-list abandoned" id="abandoned-all"></ol>
+        </div>
+      </section>
+    </div>
+
+    <div class="view list-view" id="view-milestones" hidden>
+      <section class="card next-ms">
+        <div class="card-head"><h2>Next milestones</h2><span class="card-sub" id="ms-all-sub">Closest to the next 10</span></div>
+        <ol class="mini-list" id="ms-all"></ol>
       </section>
     </div>
 

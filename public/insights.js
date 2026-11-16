@@ -4,7 +4,10 @@
 (() => {
   const { h, ago, fullDate, api, feedItem, condenseFeed, nameTag, MAX_LEVEL } = window.WF;
   const $ = (id) => document.getElementById(id);
-  const VIEWS = ['roster', 'activity', 'stats'];
+  const VIEWS = ['roster', 'activity', 'stats', 'shame', 'milestones'];
+  // Shame and Milestones are tabs only where their header cards are hidden (see styles.css).
+  const WIDE = window.matchMedia('(min-width: 1500px) and (min-aspect-ratio: 4/3)');
+  const NARROW_ONLY = ['shame', 'milestones'];
   const HOUR = 3600e3, DAY = 24 * HOUR;
   const PACE_TOP = 10;
   const PAGE = 150; // raw feed events per request (same-day level-ups are folded together on screen)
@@ -17,7 +20,7 @@
   // --- tabs -------------------------------------------------------------------
 
   function show(next) {
-    view = VIEWS.includes(next) ? next : 'roster';
+    view = VIEWS.includes(next) && !(WIDE.matches && NARROW_ONLY.includes(next)) ? next : 'roster';
     for (const v of VIEWS) $(`view-${v}`).hidden = v !== view;
     for (const a of document.querySelectorAll('.tabs a')) {
       if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -28,6 +31,8 @@
     if (view === 'stats') { loadStats(); refreshTimer = setInterval(loadStats, 60_000); }
   }
   window.addEventListener('hashchange', () => { show(location.hash.slice(1)); window.scrollTo({ top: 0 }); });
+  // Widening the window while on one of those tabs: the header cards show the same thing.
+  WIDE.addEventListener('change', () => { if (WIDE.matches && NARROW_ONLY.includes(view)) show('roster'); });
 
   // --- tooltip (hover on desktop, tap on phones) -------------------------------
 

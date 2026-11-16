@@ -534,6 +534,19 @@ label.check input { width: 16px; height: 16px; accent-color: var(--gold); margin
 li.row-empty { display: block; color: var(--muted); font-size: 12.5px; }
 li.row-ph { display: block; color: transparent; user-select: none; }
 
+/* ---------- Shame / Milestones tabs (full lists where the header cards aren't shown) ---------- */
+.list-view .card { max-width: 760px; margin: 0 auto 14px; padding: 16px 20px 12px; }
+.list-view .card h2 { font-size: 18px; }
+.list-view .card-head { margin-bottom: 6px; }
+.list-view .shame-list li, .list-view .mini-list li { padding: 7px 0; font-size: 14px; }
+.list-view .shame-list li { grid-template-columns: minmax(0, 1fr) 30px 64px; }
+.list-view .mini-list li { grid-template-columns: minmax(0, 1fr) 70px 62px; }
+.list-view .shame-level, .list-view .ms-step b { font-size: 15px; }
+.list-sub { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 18px 0 2px; padding-top: 12px; border-top: 1px solid var(--line-strong); }
+.list-sub .card-sub { font-family: var(--body); font-weight: 400; letter-spacing: 0; }
+.shame-list.abandoned li { opacity: .65; }
+.shame-list.abandoned .shame-time { color: var(--muted); }
+
 
 /* ---------- GitHub link (wide layout, in the title area) ---------- */
 .gh-card {
@@ -627,7 +640,10 @@ li.row-ph { display: block; color: transparent; user-select: none; }
 
   /* tabs + insights on phones */
   .tabs { width: 100%; margin: 10px 0 0; }
-  .tabs a { flex: 1; text-align: center; padding: 6px 0; font-size: 13.5px; }
+  .tabs a { flex: 1 1 auto; text-align: center; padding: 6px 4px; font-size: 13px; }
+  .list-view .card { padding: 12px 12px 8px; }
+  .list-view .card h2 { font-size: 16px; }
+  .list-view .shame-list li, .list-view .mini-list li { padding: 6px 0; font-size: 13.5px; }
   .card { padding: 12px; margin-bottom: 10px; border-radius: 12px; }
   .card h2 { font-size: 16px; }
   .card-grid { grid-template-columns: 1fr; gap: 0; }
@@ -675,6 +691,7 @@ li.row-ph { display: block; color: transparent; user-select: none; }
   .guild-banner { margin-top: 8px; }
   .poll-status { margin-top: 10px; }
   .tabs { margin-top: 12px; }
+  .tabs .tab-narrow { display: none; }
   .wrap { max-width: 1880px; }
 
   #view-roster {

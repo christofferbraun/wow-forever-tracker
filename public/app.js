@@ -219,9 +219,10 @@
     $('recent-list').replaceChildren(...lines.map((it) => feedItem(it, now())));
   }
 
-  // Wide layout only: "XP waste" wall. Characters not seen for 2+ days, longest first.
-  // Over 14 days counts as abandoned and drops off until the character logs in again;
-  // level 60s can't waste XP, so they're left out.
+  // "XP waste" wall: characters not seen for 2+ days, longest first. Over 14 days counts as
+  // abandoned and drops off until the character logs in again; level 60s can't waste XP, so
+  // they're left out. Wide layouts show the top 5 beside the title; elsewhere the Shame tab
+  // shows everyone.
   const SHAME_MIN = 2 * 24 * 3600e3;
   const ABANDONED = 14 * 24 * 3600e3;
   function offlineFor(ms) {
@@ -229,30 +230,40 @@
     const days = Math.floor(hours / 24);
     return days >= 10 ? `${days}d` : `${days}d ${hours % 24}h`;
   }
+  function shameRow({ p, ms }) {
+    const sev = ms >= 10 * 24 * 3600e3 ? 3 : ms >= 5 * 24 * 3600e3 ? 2 : 1;
+    return h('li',
+      h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
+      h('span.shame-level', String(p.data.level)),
+      h(`span.shame-time.sev-${sev}`, { title: `Last seen ${fullDate(p.data.lastLogin)}` }, offlineFor(ms)));
+  }
   function renderShame() {
     const t = now();
     const away = state.players
       .filter((p) => p.data?.lastLogin && (p.data.level ?? 0) < MAX_LEVEL)
       .map((p) => ({ p, ms: t - p.data.lastLogin }))
-      .filter((x) => x.ms >= SHAME_MIN);
-    const wall = away.filter((x) => x.ms <= ABANDONED).sort((a, b) => b.ms - a.ms);
-    const abandoned = away.length - wall.length;
-    // The header card stays a fixed size: the 5 longest offline, then a count of the rest.
+      .filter((x) => x.ms >= SHAME_MIN)
+      .sort((a, b) => b.ms - a.ms);
+    const wall = away.filter((x) => x.ms <= ABANDONED);
+    const gone = away.filter((x) => x.ms > ABANDONED);
+    const emptyText = 'Nobody is slacking. Everyone has played in the last 2 days.';
+
+    // Header card: fixed size, the 5 longest offline, then a count of the rest.
     const more = wall.slice(HEADER_ROWS);
-    $('shame-list').replaceChildren(...padRows(wall.slice(0, HEADER_ROWS).map(({ p, ms }) => {
-      const sev = ms >= 10 * 24 * 3600e3 ? 3 : ms >= 5 * 24 * 3600e3 ? 2 : 1;
-      return h('li',
-        h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
-        h('span.shame-level', String(p.data.level)),
-        h(`span.shame-time.sev-${sev}`, { title: `Last seen ${fullDate(p.data.lastLogin)}` }, offlineFor(ms)));
-    }), 'Nobody is slacking. Everyone has played in the last 2 days.'));
+    $('shame-list').replaceChildren(...padRows(wall.slice(0, HEADER_ROWS).map(shameRow), emptyText));
     const foot = [];
     if (more.length) {
       foot.push(h('span', { title: more.map(({ p, ms }) => `${displayName(p)}${p.nickname ? ` (${p.nickname})` : ''} · ${offlineFor(ms)}`).join('\n') },
         `+${more.length} more offline`));
     }
-    if (abandoned) foot.push(h('span', { title: 'Offline 14+ days. They come back here once they log in again.' }, `${abandoned} abandoned`));
+    if (gone.length) foot.push(h('span', { title: 'Offline 14+ days. They come back here once they log in again.' }, `${gone.length} abandoned`));
     $('shame-foot').replaceChildren(...foot.flatMap((el, i) => (i ? [' · ', el] : [el])));
+
+    // Shame tab: everyone.
+    $('shame-all').replaceChildren(...(wall.length ? wall.map(shameRow) : [h('li.row-empty', emptyText)]));
+    $('shame-all-sub').textContent = wall.length ? `${wall.length} offline 2+ days, longest first` : 'Offline 2+ days';
+    $('abandoned-wrap').hidden = !gone.length;
+    $('abandoned-all').replaceChildren(...gone.map(shameRow));
   }
 
   // Both header cards always show HEADER_ROWS lines so they keep the same shape; spare
@@ -265,9 +276,16 @@
     return out;
   }
 
-  // Wide layout only: who is closest to their next multiple of 10. Nearest first; ties go to
-  // whoever is leveling right now (levels today, then most recent level-up). Skips 60s and
-  // abandoned characters, same rules as the hall of shame.
+  // Who is closest to their next multiple of 10. Nearest first; ties go to whoever is leveling
+  // right now (levels today, then most recent level-up). Skips 60s and abandoned characters,
+  // same rules as the hall of shame. Top 5 beside the title on wide layouts, all in the
+  // Milestones tab elsewhere.
+  function milestoneRow({ p, level, next, toGo }) {
+    return h('li',
+      h('span.mini-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
+      h('span.ms-step', String(level), h('span.ms-arrow', '→'), h('b', String(next))),
+      h(`span.ms-togo${toGo === 1 ? '.ms-close' : ''}`, toGo === 1 ? '1 level' : `${toGo} levels`));
+  }
   function renderNextMilestones() {
     const t = now();
     const all = state.players
@@ -280,15 +298,16 @@
       })
       .sort((a, b) => a.toGo - b.toGo || (b.p.levelsToday || 0) - (a.p.levelsToday || 0)
         || (b.p.lastDingAt || 0) - (a.p.lastDingAt || 0) || b.level - a.level);
-    $('next-ms-list').replaceChildren(...padRows(all.slice(0, HEADER_ROWS).map(({ p, level, next, toGo }) => h('li',
-      h('span.mini-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
-      h('span.ms-step', String(level), h('span.ms-arrow', '→'), h('b', String(next))),
-      h(`span.ms-togo${toGo === 1 ? '.ms-close' : ''}`, toGo === 1 ? '1 level' : `${toGo} levels`),
-    )), 'Everyone tracked is already level 60.'));
+    const emptyText = 'Everyone tracked is already level 60.';
+    $('next-ms-list').replaceChildren(...padRows(all.slice(0, HEADER_ROWS).map(milestoneRow), emptyText));
     const oneAway = all.filter((r) => r.toGo === 1).length;
-    $('next-ms-foot').textContent = oneAway
+    const summary = oneAway
       ? `${oneAway} character${oneAway === 1 ? ' is' : 's are'} one level from a milestone`
       : all.length ? 'Nobody is one level away right now' : '';
+    $('next-ms-foot').textContent = summary;
+
+    $('ms-all').replaceChildren(...(all.length ? all.map(milestoneRow) : [h('li.row-empty', emptyText)]));
+    $('ms-all-sub').textContent = summary || 'Closest to the next 10';
   }
 
   // Wide layout only: this week's top 5 by levels gained.
