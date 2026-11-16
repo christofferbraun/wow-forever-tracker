@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, MAX_LEVEL } = window.WF;
+  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, MAX_LEVEL } = window.WF;
 
   const $ = (id) => document.getElementById(id);
   const PAGE = 150;
@@ -124,13 +124,10 @@
       h('span.c-level', { 'data-label': 'Level' }, levelCell(p)),
       h('span.c-class', { 'data-label': 'Class', style: color ? { color } : null }, d.className || '—'),
       h('span.c-race', { 'data-label': 'Race' }, d.raceName || '—'),
-      h('span.c-faction', { 'data-label': 'Faction' }, factionBadge(d)),
-      h('span.c-ruleset', { 'data-label': 'Ruleset' }, d.ruleset ? `${d.ruleset} · ${p.region.toUpperCase()}` : p.region.toUpperCase()),
-      h('span.c-ilvl', { 'data-label': 'iLvl' }, d.itemLevel != null ? String(d.itemLevel) : '—'),
-      h('span.c-login', { 'data-label': 'Last login', title: fullDate(d.lastLogin) },
-        ago(d.lastLogin, now()),
-        p.lastDingAt ? h('small.ding', { title: `Last level-up: ${fullDate(p.lastDingAt)}` }, `ding ${ago(p.lastDingAt, now())}`) : null,
-      ),
+      h('span.c-ilvl', { 'data-label': 'Item Level' }, d.itemLevel != null ? String(d.itemLevel) : '—'),
+      h('span.c-login', { 'data-label': 'Last Login', title: fullDate(d.lastLogin) }, ago(d.lastLogin, now())),
+      h('span.c-ding', { 'data-label': 'Last Ding', title: p.lastDingAt ? `Last level-up: ${fullDate(p.lastDingAt)}` : null },
+        p.lastDingAt ? ago(p.lastDingAt, now()) : '—'),
     );
   }
 
