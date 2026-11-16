@@ -252,7 +252,6 @@
         `+${more.length} more offline`));
     }
     if (abandoned) foot.push(h('span', { title: 'Offline 14+ days. They come back here once they log in again.' }, `${abandoned} abandoned`));
-    if (!foot.length) foot.push(wall.length ? 'That\'s everyone offline 2+ days' : 'Wall of shame is empty');
     $('shame-foot').replaceChildren(...foot.flatMap((el, i) => (i ? [' · ', el] : [el])));
   }
 

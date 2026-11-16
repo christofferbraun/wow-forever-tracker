@@ -482,7 +482,7 @@ li.row-empty { display: block; color: var(--muted); font-size: 12.5px; }
 li.row-ph { display: block; color: transparent; user-select: none; }
 
 
-/* ---------- GitHub link (wide layout, bottom of the left column) ---------- */
+/* ---------- GitHub link (wide layout, in the title area) ---------- */
 .gh-card {
   align-items: center; gap: 12px; padding: 12px 16px; color: var(--text); text-decoration: none;
   transition: border-color .15s, background .15s;
@@ -490,8 +490,16 @@ li.row-ph { display: block; color: transparent; user-select: none; }
 .gh-card:hover { border-color: var(--line-strong); background: rgba(230,194,122,.06); color: var(--text); text-decoration: none; }
 .gh-icon { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--gold); background: rgba(230,194,122,.10); border: 1px solid var(--line); }
 .gh-text { display: flex; flex-direction: column; min-width: 0; font-size: 13.5px; line-height: 1.35; }
+.gh-text > b, .gh-text > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh-text .gh-long, .gh-text .gh-short { font: inherit; color: inherit; }
+.gh-short { display: none; }
+/* Wide layout below ~1760px: the space beside the tabs is narrower, so use the short label. */
+@media (max-width: 1760px) {
+  .gh-text .gh-long { display: none; }
+  .gh-text .gh-short { display: inline; }
+}
 .gh-text b { font-weight: 600; }
-.gh-text span { color: var(--muted); font-size: 12px; }
+.gh-text > span { color: var(--muted); font-size: 12px; }
 .gh-arrow { margin-left: auto; color: var(--muted); font-size: 16px; }
 .gh-card:hover .gh-arrow { color: var(--gold); }
 .foot-links { white-space: nowrap; }
@@ -629,7 +637,12 @@ li.row-ph { display: block; color: transparent; user-select: none; }
 
   #view-roster #stats, #view-roster #class-mix { display: none; }
   #overview, #class-card { display: block; }
-  #gh-card { display: flex; }
+  /* GitHub link: left part of the title area, level with the status line and tabs. */
+  .hero { position: relative; }
+  #gh-card {
+    display: flex; position: absolute; left: 0; bottom: 4px; margin: 0;
+    width: min(320px, calc(50% - 170px)); text-align: left;
+  }
   .side .card { margin-bottom: 12px; padding: 12px 16px 8px; }
   .side .card-head { margin-bottom: 4px; }
   .side h2 { font-size: 16px; }
