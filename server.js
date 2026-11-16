@@ -11,11 +11,15 @@ const { BlizzardClient, mapGuild, guildSlugFromName } = require('./src/blizzard'
 const Poller = require('./src/poller');
 const createAuth = require('./src/auth');
 const stats = require('./src/stats');
+const Visits = require('./src/visits');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
 const poller = new Poller({ store, client, config });
 const auth = createAuth(config);
+const visits = new Visits(config.dataDir);
+// Visitor tracking must never break a page or API response.
+const track = (fn) => { try { fn(); } catch (err) { console.error(`[visits] ${err.message}`); } };
 const { mergedLevel } = Poller;
 
 const app = express();
@@ -224,6 +228,7 @@ app.get('/api/site', (req, res) => {
 });
 
 app.get('/api/players', (req, res) => {
+  track(() => visits.ping(req, auth.isAdmin(req)));
   const now = Date.now();
   const g = store.meta.guild;
   const entries = statEntries(g);
@@ -255,6 +260,7 @@ function statEntries(g = store.meta.guild) {
 
 // Activity feed, newest first. Page back with ?before=<timestamp of the last item>.
 app.get('/api/activity', (req, res) => {
+  if (!req.query.before) track(() => visits.ping(req, auth.isAdmin(req), 'activity'));
   const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
   const before = Number(req.query.before) || Infinity;
   res.set('Cache-Control', 'no-store');
@@ -262,6 +268,7 @@ app.get('/api/activity', (req, res) => {
 });
 
 app.get('/api/stats', (req, res) => {
+  track(() => visits.ping(req, auth.isAdmin(req), 'stats'));
   const now = Date.now();
   const entries = statEntries();
   res.set('Cache-Control', 'no-store');
@@ -472,6 +479,29 @@ admin.patch('/guild/ranks', (req, res) => {
   res.json({ guild: adminGuild() });
 });
 
+// --- visitors ---
+
+admin.get('/visits', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json(visits.summary({
+    range: String(req.query.range || '7d'),
+    hideMine: req.query.mine !== '1',
+    tzOffset: Math.max(-900, Math.min(900, Number(req.query.tz) || 0)),
+  }));
+});
+
+admin.put('/visits/labels', (req, res) => {
+  const ip = String(req.body?.ip ?? '').trim();
+  if (!ip || ip.length > 45) return res.status(400).json({ error: 'Missing IP' });
+  visits.setLabel(ip, req.body?.label);
+  res.json({ ok: true });
+});
+
+admin.delete('/visits', (req, res) => {
+  visits.clear();
+  res.json({ ok: true });
+});
+
 app.use('/api/admin', admin);
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
@@ -502,7 +532,10 @@ const sendPage = (name, status = 200) => (req, res) => {
   res.status(status).type('html').send(pages[name]);
 };
 
-app.get(['/', '/index.html'], sendPage('index'));
+app.get(['/', '/index.html'], (req, res, next) => {
+  track(() => visits.pageView(req, auth.isAdmin(req)));
+  next();
+}, sendPage('index'));
 app.get(['/admin', '/admin.html'], sendPage('admin'));
 app.use(express.static(pub, {
   index: false,
@@ -519,6 +552,7 @@ const server = app.listen(config.port, config.host, () => {
 
 function shutdown() {
   poller.stop();
+  visits.save();
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000).unref();
 }

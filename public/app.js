@@ -353,7 +353,8 @@
 
   loadSite();
   load();
-  setInterval(load, 30_000);
+  // Poll only while the tab is visible (coming back to it reloads straight away, below).
+  setInterval(() => { if (!document.hidden) load(); }, 30_000);
   setInterval(renderPollStatus, 1_000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
 })();

@@ -10,7 +10,7 @@ level, last login, and avatar.
   every 30 seconds.
 - **Admin page (`/admin`):** password login. Pick the guild to track and name its ranks. Add players outside
   the guild one at a time or in bulk, set a public note per player, and hide guild members you don't want
-  shown (alts, say). Force refreshes and see poll and API status.
+  shown (alts, say). Force refreshes and see poll and API status. See who visits the site (below).
 - **Stack:** Node.js 22 + Express. The data lives in one JSON file (`data/players.json`) and the frontend is
   vanilla JS with no build step.
 
@@ -79,6 +79,28 @@ Notes:
 
 Even with `GUILD_PROFILE_INTERVAL_SECONDS=300`, a 1,000-member guild uses about 12,000 requests/hour, a
 third of the limit.
+
+---
+
+## Visitor stats (admin only)
+
+The **Visitors** panel on `/admin` shows whether the site is being used: who is on it right now, page
+views and unique visitors over 24 hours to 90 days, returning visitors, time on page, which tabs people open,
+and breakdowns by country, device, browser, system, referring site, and bots or link previews (for example,
+someone pasting the link in Discord). Each IP can be given a name so you recognise it next time.
+
+How it works, and what it doesn't do:
+
+- **No cookies or browser storage for visitors.** Each load of the public page is logged on the server with
+  the IP, the country Cloudflare reports (`CF-IPCountry`), the user agent and the referring site. Time on
+  page comes from the page's own 30-second refresh, which only runs while the tab is visible.
+- **Your own visits** are recognised from your admin sign-in cookie and hidden unless you tick
+  "Include my own visits".
+- **Kept for 90 days** in `data/visits.json`, separate from the roster. **Clear visitor log** deletes it.
+- **Countries:** Cloudflare adds the country header when **IP Geolocation** is on for the zone
+  (Network settings in the dashboard). It is on by default.
+- IP addresses count as personal data under laws like the GDPR, even without cookies. For a small guild
+  site this is usually fine, but don't share the log.
 
 ---
 
@@ -223,6 +245,8 @@ src/store.js         JSON-file storage (atomic writes)
 src/blizzard.js      OAuth + Forever profile/guild/static API client, response mapping
 src/poller.js        Polling loop: guild roster sync, profile refresh, level history, avatars
 src/auth.js          Admin password login, signed session cookie, rate limiting
+src/stats.js         Activity feed and guild analytics
+src/visits.js        Cookieless visitor log for the admin Visitors panel
 public/              index.html (roster), admin.html, styles.css, *.js
 Dockerfile, docker-compose.yml, deploy/  Hosting
 ```
@@ -234,7 +258,8 @@ Public: `GET /api/players`, `GET /api/site`, `GET /healthz`
 Admin (session cookie + `X-Requested-With: fetch` header on writes): `POST /api/admin/login`, `POST /api/admin/logout`,
 `GET /api/admin/status`, `GET|POST /api/admin/players`, `POST /api/admin/players/bulk`,
 `PATCH|DELETE /api/admin/players/:id` (PATCH accepts `note`, `region`, `hidden`), `POST /api/admin/players/:id/refresh`,
-`POST /api/admin/refresh-all`, `GET|PUT|DELETE /api/admin/guild`, `PATCH /api/admin/guild/ranks`
+`POST /api/admin/refresh-all`, `GET|PUT|DELETE /api/admin/guild`, `PATCH /api/admin/guild/ranks`,
+`GET|DELETE /api/admin/visits` (`?range=24h|7d|30d|90d&mine=1&tz=<minutes>`), `PUT /api/admin/visits/labels`
 
 Upgrading from the first version needs no migration: the existing `players.json` is read as is.
 

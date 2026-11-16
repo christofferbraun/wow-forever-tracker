@@ -34,6 +34,7 @@
     $('login-panel').hidden = on;
     $('admin-panel').hidden = !on;
     clearInterval(statusTimer);
+    window.AdminVisits?.[on ? 'start' : 'stop']();
     if (on) {
       refresh();
       statusTimer = setInterval(refresh, 15_000);
