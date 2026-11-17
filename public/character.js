@@ -259,10 +259,17 @@
   }
 
   function showTip(slotBtn, sheet) {
-    const it = (data?.gear || []).find((i) => i.slot === slotBtn.dataset.slot);
-    if (!it) return;
+    let content = null;
+    if (slotBtn.dataset.node) {
+      const t = talentNodes.get(slotBtn.dataset.node);
+      if (t) content = talentTooltip(t);
+    } else {
+      const it = (data?.gear || []).find((i) => i.slot === slotBtn.dataset.slot);
+      if (it) content = tooltip(it);
+    }
+    if (!content) return;
     const tip = tipEl();
-    tip.replaceChildren(...tooltip(it));
+    tip.replaceChildren(...content);
     tip.className = `item-tip${sheet ? ' sheet' : ''}`;
     tip.hidden = false;
     tipSlot = slotBtn;
@@ -286,23 +293,24 @@
     tipEl().hidden = true;
   }
 
+  const TIP_TARGETS = '.slot[data-slot], .tt-node[data-node]';
   function wireTips() {
     const panel = overlay.querySelector('.cp-panel');
     let lastPointer = 'mouse';
     panel.addEventListener('pointerdown', (e) => { lastPointer = e.pointerType; });
     panel.addEventListener('pointerover', (e) => {
       if (e.pointerType !== 'mouse' || tipPinned) return;
-      const slot = e.target.closest('.slot[data-slot]');
+      const slot = e.target.closest(TIP_TARGETS);
       if (slot) showTip(slot, false); else hideTip();
     });
     panel.addEventListener('pointerleave', () => hideTip());
     panel.addEventListener('focusin', (e) => {
-      const slot = e.target.closest('.slot[data-slot]');
+      const slot = e.target.closest(TIP_TARGETS);
       if (slot && lastPointer === 'mouse' && !tipPinned) showTip(slot, false);
     });
     panel.addEventListener('focusout', () => { if (!tipPinned) hideTip(); });
     panel.addEventListener('click', (e) => {
-      const slot = e.target.closest('.slot[data-slot]');
+      const slot = e.target.closest(TIP_TARGETS);
       if (!slot) { if (tipPinned && !e.target.closest('.item-tip')) hideTip(true); return; }
       if (lastPointer === 'mouse') return; // hover already shows it
       if (tipPinned && tipSlot === slot) { hideTip(true); return; }
@@ -392,7 +400,121 @@
 
   // --- talents -------------------------------------------------------------------------
 
+  // In-game style trees from the class's talent layout; a plain list if the layout couldn't be loaded.
+  const CELL = 56; // grid step in px (40px icon + gap)
+  let talentNodes = new Map(); // "spec:node" -> { node, rank, tree }
+
+  function svgEl(tag, attrs) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+    return el;
+  }
+
   function renderTalents(d) {
+    const layout = d.talentLayout;
+    if (!layout?.length) return renderTalentList(d);
+    const learned = new Map();
+    for (const tree of d.talents?.trees || []) {
+      for (const t of tree.talents) {
+        if (t.id) learned.set(`id:${t.id}`, t.rank || 0);
+        if (t.name) learned.set(`name:${t.name}`, t.rank || 0);
+      }
+    }
+    const rankOf = (n) => learned.get(`id:${n.talentId}`) ?? learned.get(`name:${n.name}`) ?? 0;
+    talentNodes = new Map();
+
+    const trees = layout.map((tree) => {
+      const nodes = tree.nodes.map((n) => ({ ...n, rank: Math.min(rankOf(n), n.max) }));
+      const points = nodes.reduce((s, n) => s + n.rank, 0);
+      return { ...tree, nodes, points };
+    });
+    const total = trees.reduce((s, t) => s + t.points, 0);
+
+    const summary = h('p.cp-summary',
+      ...trees.flatMap((t, i) => [i ? h('span.muted', ' / ') : null, h(t.points ? 'b' : 'span.muted', `${t.name} ${t.points}`)]).filter(Boolean),
+      h('span.muted', ` · ${total} point${total === 1 ? '' : 's'}`));
+
+    return [summary, h('div.tt-trees', ...trees.map((t) => treeEl(t)))];
+  }
+
+  function treeEl(tree) {
+    const minCol = Math.min(...tree.nodes.map((n) => n.col));
+    const cols = Math.max(4, Math.max(...tree.nodes.map((n) => n.col)) - minCol + 1);
+    const rows = Math.max(7, ...tree.nodes.map((n) => n.row));
+    const pos = (n) => ({ x: (n.col - minCol) * CELL + CELL / 2, y: (n.row - 1) * CELL + CELL / 2 });
+    const byId = new Map(tree.nodes.map((n) => [n.id, n]));
+
+    // Prerequisite arrows, and dashed links between "pick one" talents that lock each other.
+    const svg = svgEl('svg', { class: 'tt-links', width: cols * CELL, height: rows * CELL, 'aria-hidden': 'true' });
+    const defs = svgEl('defs', {});
+    const marker = svgEl('marker', { id: `tt-arrow-${tree.specId}`, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' });
+    marker.append(svgEl('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'context-stroke' }));
+    defs.append(marker);
+    svg.append(defs);
+    for (const n of tree.nodes) {
+      for (const targetId of n.unlocks) {
+        const t = byId.get(targetId);
+        if (!t) continue;
+        const mutual = t.unlocks.includes(n.id);
+        if (mutual && n.id > t.id) continue; // draw each pair once
+        const a = pos(n);
+        const b = pos(t);
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const pad = 23; // stop at the icon edge
+        const [ux, uy] = [(b.x - a.x) / len, (b.y - a.y) / len];
+        const line = svgEl('line', {
+          x1: a.x + ux * pad, y1: a.y + uy * pad, x2: b.x - ux * pad, y2: b.y - uy * pad,
+          class: `tt-link${mutual ? ' choice' : ''}${n.rank >= n.max || (mutual && (n.rank || t.rank)) ? ' met' : ''}`,
+        });
+        if (!mutual) line.setAttribute('marker-end', `url(#tt-arrow-${tree.specId})`);
+        svg.append(line);
+      }
+    }
+
+    const grid = h('div.tt-grid', { style: { width: `${cols * CELL}px`, height: `${rows * CELL}px` } }, svg,
+      ...tree.nodes.map((n) => {
+        const key = `${tree.specId}:${n.id}`;
+        talentNodes.set(key, { node: n, tree });
+        const { x, y } = pos(n);
+        const state = n.rank >= n.max ? 'max' : n.rank > 0 ? 'some' : 'none';
+        const btn = h(`button.tt-node.${state}`, {
+          type: 'button', dataset: { node: key }, style: { left: `${x - 20}px`, top: `${y - 20}px` },
+          'aria-label': `${n.name}, rank ${n.rank} of ${n.max}`,
+        },
+        n.icon ? h('img', { src: n.icon, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span.tt-noicon', n.name.charAt(0)),
+        h('span.tt-rank', `${n.rank}/${n.max}`));
+        return btn;
+      }));
+
+    return h('section.tt-tree',
+      h('h3', tree.name, h('span.cp-count', String(tree.points))),
+      h('div.tt-scroll', grid));
+  }
+
+  function talentTooltip({ node: n, tree }) {
+    const rows = [];
+    rows.push(h('div.it-name', { style: { '--q': '#fff' } }, n.name));
+    rows.push(h('div.it-white', `Rank ${n.rank}/${n.max}`));
+    if (n.cast && n.cast !== 'Passive') {
+      if (n.cost || n.range) rows.push(h('div.it-row', h('span', n.cost || ''), h('span', n.range || '')));
+      rows.push(h('div.it-row', h('span', n.cast || ''), h('span', n.cooldown || '')));
+    }
+    const cur = n.ranks[Math.max(0, n.rank - 1)];
+    if (cur) rows.push(h('div.it-gold.it-pre', cur));
+    if (n.rank > 0 && n.rank < n.max && n.ranks[n.rank]) {
+      rows.push(h('div.it-gap'));
+      rows.push(h('div.it-white', 'Next rank:'));
+      rows.push(h('div.it-gold.it-pre', n.ranks[n.rank]));
+    }
+    const nameOf = (id) => tree.nodes.find((x) => x.id === id)?.name;
+    const choice = n.lockedBy.filter((id) => n.unlocks.includes(id)).map(nameOf).filter(Boolean);
+    const prereq = n.lockedBy.filter((id) => !n.unlocks.includes(id)).map(nameOf).filter(Boolean);
+    if (choice.length) rows.push(h('div.it-grey', `Can't be taken together with ${choice.join(', ')}`));
+    if (prereq.length && !n.rank) rows.push(h('div.it-red', `Requires ${prereq.join(', ')}`));
+    return rows;
+  }
+
+  function renderTalentList(d) {
     const t = d.talents;
     const trees = (t?.trees || []).slice().sort((a, b) => b.points - a.points);
     const total = trees.reduce((n, x) => n + x.points, 0);

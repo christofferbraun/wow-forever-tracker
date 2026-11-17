@@ -924,6 +924,38 @@ button.slot:hover, button.slot:focus-visible { background: rgba(255,255,255,.05)
 .cp-all summary { cursor: pointer; color: var(--gold); font-weight: 600; }
 .cp-all h4 { margin: 14px 0 4px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 
+/* talent trees, laid out like the in-game talent frame */
+.tt-trees { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+.tt-tree {
+  flex: 0 1 auto; min-width: 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(230,194,122,.08), transparent 70%), rgba(0,0,0,.25);
+}
+.tt-tree h3 { margin: 0 0 8px; font: 600 15px/1.2 var(--display); color: var(--gold); display: flex; justify-content: space-between; gap: 8px; }
+.tt-scroll { overflow-x: auto; }
+.tt-grid { position: relative; margin: 0 auto; }
+.tt-links { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.tt-link { stroke: #59617a; stroke-width: 3; color: #59617a; }
+.tt-link.met { stroke: #e6c200; }
+.tt-link.choice { stroke-dasharray: 4 4; stroke-width: 2; }
+.tt-node {
+  position: absolute; width: 40px; height: 40px; padding: 0; border-radius: 7px; cursor: pointer;
+  border: 2px solid #3b4257; background: #0b1222; box-shadow: 0 0 0 1px rgba(0,0,0,.7);
+}
+.tt-node img, .tt-noicon { width: 100%; height: 100%; display: block; border-radius: 5px; }
+.tt-noicon { display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+.tt-node.none img, .tt-node.none .tt-noicon { filter: grayscale(1) brightness(.55); }
+.tt-node.some { border-color: #1eff00; box-shadow: 0 0 0 1px rgba(0,0,0,.7), 0 0 8px -1px rgba(30,255,0,.6); }
+.tt-node.max { border-color: #ffd100; box-shadow: 0 0 0 1px rgba(0,0,0,.7), 0 0 8px -1px rgba(255,209,0,.6); }
+.tt-node:hover, .tt-node:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 1px; }
+.tt-rank {
+  position: absolute; right: -8px; bottom: -8px; min-width: 22px; padding: 0 3px; border-radius: 5px;
+  background: #05070f; border: 1px solid #3b4257; font: 700 10.5px/15px var(--body); color: #9aa0b3; text-align: center;
+}
+.tt-node.some .tt-rank { color: #1eff00; border-color: rgba(30,255,0,.5); }
+.tt-node.max .tt-rank { color: #ffd100; border-color: rgba(255,209,0,.5); }
+.it-pre { white-space: pre-line; }
+.it-red { color: #ff4040; }
+
 @media (max-width: 760px) {
   .cp-overlay { padding: 0; }
   .cp-panel { width: 100%; height: 100%; max-height: none; border-radius: 0; border: 0; }

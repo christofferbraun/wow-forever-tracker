@@ -14,6 +14,7 @@ const stats = require('./src/stats');
 const Visits = require('./src/visits');
 const { probeCharacter } = require('./src/probe');
 const { CharacterDetails, NotVisibleError } = require('./src/character');
+const TalentTrees = require('./src/talents');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
@@ -21,6 +22,7 @@ const poller = new Poller({ store, client, config });
 const auth = createAuth(config);
 const visits = new Visits(config.dataDir);
 const characters = new CharacterDetails({ client, dataDir: config.dataDir });
+const talentTrees = new TalentTrees({ client, dataDir: config.dataDir });
 // Visitor tracking must never break a page or API response.
 const track = (fn) => { try { fn(); } catch (err) { console.error(`[visits] ${err.message}`); } };
 const { mergedLevel } = Poller;
@@ -278,7 +280,15 @@ app.get('/api/characters/:slug', async (req, res) => {
   try {
     const keep = new Set(store.list().map((x) => x.id));
     const details = await characters.get(p, keep);
-    res.json({ player, render: p.media?.main || null, ...details });
+    // The class's talent tree layouts (static data, cached); the panel falls back to a list without them.
+    let talentLayout = null;
+    try {
+      const specIds = (details.talents?.trees || []).map((t) => t.specId).filter(Boolean);
+      talentLayout = await talentTrees.forClass(p.region, { specIds, className: p.data?.className });
+    } catch (err) {
+      console.error(`[talents] ${p.slug}: ${err.message}`);
+    }
+    res.json({ player, render: p.media?.main || null, ...details, talentLayout });
   } catch (err) {
     const status = err instanceof NotVisibleError ? 404 : 502;
     if (status === 502) console.error(`[characters] ${p.slug}: ${err.message}`);
@@ -604,6 +614,7 @@ function shutdown() {
   poller.stop();
   visits.save();
   characters.save();
+  talentTrees.save();
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000).unref();
 }

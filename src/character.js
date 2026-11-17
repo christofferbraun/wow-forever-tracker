@@ -145,9 +145,11 @@ function mapTalents(raw) {
   return {
     groups: groups.length,
     trees: arr(g.specializations).map((s) => ({
+      specId: num(s.specialization?.id),
       name: str(s.specialization_name) || str(s.specialization?.name),
       points: num(s.spent_points) || 0,
       talents: arr(s.talents).map((t) => ({
+        id: num(t.talent?.id),
         name: str(t.talent?.name) || str(t.spell_tooltip?.spell?.name),
         rank: num(t.talent_rank),
         desc: str(t.spell_tooltip?.description),
