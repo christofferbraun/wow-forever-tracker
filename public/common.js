@@ -131,7 +131,8 @@ window.WF = (() => {
   /** Character name in class color, followed by the nickname if there is one. */
   function nameTag(item) {
     const color = classColor(item);
-    return h('span.name-tag',
+    // With a slug, the name opens the character panel (#c/<slug>, see character.js).
+    return h(item.slug ? 'a.name-tag.char-link' : 'span.name-tag', item.slug ? { href: `#c/${encodeURIComponent(item.slug)}` } : null,
       h('b', { style: color ? { color } : null }, item.name),
       item.nickname ? h('span.nick', item.nickname) : null);
   }

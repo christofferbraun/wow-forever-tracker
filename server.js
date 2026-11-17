@@ -13,12 +13,14 @@ const createAuth = require('./src/auth');
 const stats = require('./src/stats');
 const Visits = require('./src/visits');
 const { probeCharacter } = require('./src/probe');
+const { CharacterDetails, NotVisibleError } = require('./src/character');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
 const poller = new Poller({ store, client, config });
 const auth = createAuth(config);
 const visits = new Visits(config.dataDir);
+const characters = new CharacterDetails({ client, dataDir: config.dataDir });
 // Visitor tracking must never break a page or API response.
 const track = (fn) => { try { fn(); } catch (err) { console.error(`[visits] ${err.message}`); } };
 const { mergedLevel } = Poller;
@@ -139,6 +141,7 @@ function publicPlayer(p, g, now = Date.now()) {
     id: p.id,
     firstName: p.firstName,
     surname: p.surname,
+    slug: p.slug,
     region: p.region,
     note: p.note || '',
     nickname: p.nickname || '',
@@ -258,6 +261,30 @@ function statEntries(g = store.meta.guild) {
     data: mergedData(p, g), levelHistory: p.levelHistory || [], loginHistory: p.loginHistory || [],
   }));
 }
+
+// Character panel: gear, character sheet, talents, professions, reputation and fun stats.
+// :slug is "first-surname"; add ?region= when the same name exists in two regions.
+app.get('/api/characters/:slug', async (req, res) => {
+  track(() => visits.ping(req, auth.isAdmin(req), 'character'));
+  const slug = String(req.params.slug).toLowerCase();
+  const region = parseRegion(req.query.region);
+  const matches = store.list().filter((p) => !p.hidden && p.slug === slug && (!req.query.region || p.region === region));
+  const p = matches.find((m) => m.region === config.defaultRegion) || matches[0];
+  if (!p) return res.status(404).json({ error: 'That character is not on the roster' });
+  const g = store.meta.guild;
+  const player = publicPlayer(p, g);
+  res.set('Cache-Control', 'no-store');
+  if (!p.data) return res.status(404).json({ error: player.hint || 'No details from Blizzard yet', player });
+  try {
+    const keep = new Set(store.list().map((x) => x.id));
+    const details = await characters.get(p, keep);
+    res.json({ player, render: p.media?.main || null, ...details });
+  } catch (err) {
+    const status = err instanceof NotVisibleError ? 404 : 502;
+    if (status === 502) console.error(`[characters] ${p.slug}: ${err.message}`);
+    res.status(status).json({ error: status === 404 ? err.message : 'Could not load this character from Blizzard right now. Try again in a minute.', player });
+  }
+});
 
 // Activity feed, newest first. Page back with ?before=<timestamp of the last item>.
 app.get('/api/activity', (req, res) => {
@@ -576,6 +603,7 @@ const server = app.listen(config.port, config.host, () => {
 function shutdown() {
   poller.stop();
   visits.save();
+  characters.save();
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 3000).unref();
 }

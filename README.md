@@ -8,6 +8,9 @@ level, last login, and avatar.
 - **Public page (`/`):** sortable, searchable roster with the guild banner, level bars, class colours,
   class-mix chips, level and rank filters, "+N levels today", and "last ding" times. It refreshes itself
   every 30 seconds.
+- **Character panel:** click any name (roster, activity feed, shame list…) to see that character's gear
+  with item icons and in-game style tooltips, character sheet, talents, professions, reputations and fun
+  stats (deaths, quests, flight paths…). Each panel has its own link, e.g. `/#c/anduin-wrynn`.
 - **Admin page (`/admin`):** password login. Pick the guild to track and name its ranks. Add players outside
   the guild one at a time or in bulk, set a public note per player, and hide guild members you don't want
   shown (alts, say). Force refreshes and see poll and API status. See who visits the site (below).
@@ -81,6 +84,19 @@ Even with `GUILD_PROFILE_INTERVAL_SECONDS=300`, a 1,000-member guild uses about 
 third of the limit.
 
 ---
+
+## Character panel
+
+Opened with `/#c/<first-surname>`. The server fetches 7 Blizzard endpoints for the character (equipment,
+statistics, specializations, professions, reputations, achievements, achievement statistics) plus one icon
+per item it hasn't seen before, trims them down, and keeps the result in `data/characters.json`. Blizzard
+only updates these when a character logs out, so the copy is reused until the poller sees a newer last
+login (or 6 hours pass). Opening a panel is free most of the time. Item icons never change and are kept for
+good in `data/item-icons.json`.
+
+On Forever the item lookup (`/data/wow/item/{id}`) returns 404 for most items, but the equipment response
+already carries everything a tooltip needs, so it isn't used. The admin **API probe** panel shows the raw
+responses for any character if you want to check what Blizzard sends.
 
 ## Visitor stats (admin only)
 
@@ -273,13 +289,14 @@ src/auth.js          Admin password login, signed session cookie, rate limiting
 src/stats.js         Activity feed and guild analytics
 src/visits.js        Cookieless visitor log for the admin Visitors panel
 src/probe.js         Admin API probe: raw Blizzard responses for one character
+src/character.js     Character panel data: fetch, trim and cache gear, stats, talents…
 public/              index.html (roster), admin.html, styles.css, *.js
 Dockerfile, docker-compose.yml, deploy/  Hosting (deploy/auto-update.sh: redeploy on push)
 ```
 
 ## API endpoints
 
-Public: `GET /api/players`, `GET /api/site`, `GET /healthz`
+Public: `GET /api/players`, `GET /api/site`, `GET /api/characters/:slug` (character panel), `GET /healthz`
 
 Admin (session cookie + `X-Requested-With: fetch` header on writes): `POST /api/admin/login`, `POST /api/admin/logout`,
 `GET /api/admin/status`, `GET|POST /api/admin/players`, `POST /api/admin/players/bulk`,

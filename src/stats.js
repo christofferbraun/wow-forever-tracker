@@ -73,6 +73,7 @@ function who(e) {
   const d = e.data || {};
   return {
     playerId: e.id,
+    slug: e.slug || null,
     name: `${d.name || e.firstName} ${d.surname || e.surname}`.trim(),
     nickname: e.nickname || '',
     classId: d.classId ?? null,

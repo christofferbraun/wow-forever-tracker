@@ -134,7 +134,7 @@
     ].filter(Boolean);
     $('overview-list').replaceChildren(
       ...rows.flatMap(([k, v, tip]) => [h('dt', { title: tip || null }, k), h('dd', v)]),
-      ...(top ? [h('dt', 'Leading'), h('dd.kv-lead', h('b', String(top.data.level)), ' ', nameTag({ ...top.data, name: displayName(top), nickname: '' }))] : []),
+      ...(top ? [h('dt', 'Leading'), h('dd.kv-lead', h('b', String(top.data.level)), ' ', nameTag({ ...top.data, name: displayName(top), nickname: '', slug: top.slug }))] : []),
     );
   }
 
@@ -168,7 +168,7 @@
     const charCell = h('div.char',
       avatar(p),
       h('div.char-text',
-        h('span.char-name', { style: color ? { color } : null }, displayName(p)),
+        h('a.char-name', { href: `#c/${encodeURIComponent(p.slug)}`, style: color ? { color } : null }, displayName(p)),
         h('span.char-sub',
           p.nickname ? h('span.nick', p.nickname) : null,
           p.inGuild ? h('span.rank-name', p.rankName) : d.guild ? h('span.guild', `<${d.guild}>`) : null,
@@ -178,7 +178,7 @@
       ),
     );
 
-    return h('div.row', { role: 'row', dataset: { status: p.status, profile: p.hasProfile ? '1' : '0' } },
+    return h('div.row', { role: 'row', dataset: { status: p.status, profile: p.hasProfile ? '1' : '0', slug: p.slug } },
       h('span.rank', String(i + 1)),
       charCell,
       h('span.c-level', { 'data-label': 'Level' }, levelCell(p)),
@@ -233,7 +233,7 @@
   function shameRow({ p, ms }) {
     const sev = ms >= 10 * 24 * 3600e3 ? 3 : ms >= 5 * 24 * 3600e3 ? 2 : 1;
     return h('li',
-      h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
+      h('span.shame-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname, slug: p.slug })),
       h('span.shame-level', String(p.data.level)),
       h(`span.shame-time.sev-${sev}`, { title: `Last seen ${fullDate(p.data.lastLogin)}` }, offlineFor(ms)));
   }
@@ -282,7 +282,7 @@
   // Milestones tab elsewhere.
   function milestoneRow({ p, level, next, toGo }) {
     return h('li',
-      h('span.mini-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname })),
+      h('span.mini-name', nameTag({ ...p.data, name: displayName(p), nickname: p.nickname, slug: p.slug })),
       h('span.ms-step', String(level), h('span.ms-arrow', '→'), h('b', String(next))),
       h(`span.ms-togo${toGo === 1 ? '.ms-close' : ''}`, toGo === 1 ? '1 level' : `${toGo} levels`));
   }
@@ -369,6 +369,12 @@
   });
   $('rank-filter').addEventListener('change', (e) => { state.rank = e.target.value; state.limit = PAGE; renderRows(); });
   $('show-more').addEventListener('click', () => { state.limit += PAGE; renderRows(); });
+  // Clicking anywhere on a roster row opens the character panel (the name itself is a link).
+  $('rows').addEventListener('click', (e) => {
+    const r = e.target.closest('.row[data-slug]');
+    if (!r || e.target.closest('a') || window.getSelection()?.toString()) return;
+    location.hash = `c/${encodeURIComponent(r.dataset.slug)}`;
+  });
 
   loadSite();
   load();

@@ -30,7 +30,13 @@
     if (view === 'activity') { loadFeed(true); refreshTimer = setInterval(() => loadFeed(true), 60_000); }
     if (view === 'stats') { loadStats(); refreshTimer = setInterval(loadStats, 60_000); }
   }
-  window.addEventListener('hashchange', () => { show(location.hash.slice(1)); window.scrollTo({ top: 0 }); });
+  window.addEventListener('hashchange', () => {
+    const next = location.hash.slice(1);
+    if (next.startsWith('c/')) return; // the character panel opens over the current tab
+    const before = view;
+    show(next);
+    if (view !== before) window.scrollTo({ top: 0 });
+  });
   // Widening the window while on one of those tabs: the header cards show the same thing.
   WIDE.addEventListener('change', () => { if (WIDE.matches && NARROW_ONLY.includes(view)) show('roster'); });
 

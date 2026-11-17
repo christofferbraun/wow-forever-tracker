@@ -26,7 +26,7 @@
   }
   const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const deviceText = (v) => [v.device, v.os, v.browser].filter((x) => x && x !== 'Other').join(' · ') || 'Unknown';
-  const TAB_NAMES = { activity: 'Activity', stats: 'Stats' };
+  const TAB_NAMES = { activity: 'Activity', stats: 'Stats', character: 'Characters' };
   const tabsText = (tabs) => (tabs?.length ? tabs.map((t) => TAB_NAMES[t] || t).join(', ') : '');
 
   // Don't re-render while a name is being typed.
