@@ -3,8 +3,11 @@
 /**
  * Guild leaderboards from each character's in-game statistics
  * (/profile/wow/character/{slug}/achievements/statistics), kept per player as
- * `funStats: { checkedAt, lastLogin, s: { statId: quantity } }` by the background refresher.
+ * `funStats: { checkedAt, lastLogin, s: { statId: quantity } }` by the background refresher,
+ * plus library books handed in (src/library.js, from completed quests).
  */
+
+const { BOOKS } = require('./library');
 
 // [key, emoji, title, what it counts, stat ids summed]
 const BOARDS = [
@@ -54,8 +57,8 @@ function pickStats(list) {
 const sum = (s, ids) => ids.reduce((n, id) => n + (s?.[id] || 0), 0);
 
 /**
- * rows: [{ who: { playerId, slug, name, nickname, classId, className }, level, s }]
- * Characters without statistics yet are left out (counted in `coverage`).
+ * rows: [{ who: { playerId, slug, name, nickname, classId, className }, level, s, books }]
+ * Characters without statistics yet are left out (counted in `coverage`). `books` is null until checked.
  */
 function build(rows, total) {
   const have = rows.filter((r) => r.s && Object.keys(r.s).length);
@@ -71,6 +74,14 @@ function build(rows, total) {
     .map((r) => ({ ...r.who, level: r.level, deaths: sum(r.s, [60]), value: Math.round((sum(r.s, [60]) / r.level) * 100) / 10 }))
     .sort((a, b) => a.value - b.value || b.level - a.level)
     .slice(0, TOP);
+  // Library books handed in, out of 40.
+  const readers = rows.filter((r) => r.books > 0)
+    .map((r) => ({ ...r.who, level: r.level, value: r.books }))
+    .sort((a, b) => b.value - a.value || (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name));
+  if (readers.length) {
+    boards.splice(Math.min(2, boards.length), 0, { key: 'books', icon: '📚', title: 'Bookworms', stat: `Library books handed in (of ${BOOKS})`, top: readers.slice(0, TOP), total: readers.reduce((n, r) => n + r.value, 0), count: readers.length });
+  }
+
   if (careful.length) {
     boards.splice(1, 0, { key: 'careful', icon: '😇', title: 'Untouchables', stat: 'Fewest deaths per 10 levels (30+)', top: careful, lowerIsBetter: true, total: null, count: careful.length });
   }

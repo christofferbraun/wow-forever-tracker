@@ -2,7 +2,8 @@
 
 /**
  * Background refresh of per-character extras the roster pages need for everyone, not just
- * characters someone opened: talent splits (roles) and in-game statistics (leaderboards).
+ * characters someone opened: talent splits (roles), in-game statistics (leaderboards) and
+ * completed library-book quests (leaderboards).
  * Blizzard only updates these on logout, so each is fetched again only after the poller sees
  * a newer last login (or once a week). That's 1 call per kind per play session.
  */
@@ -10,6 +11,7 @@
 const { BlizzardClient, RateLimitError } = require('./blizzard');
 const { mapTalents, mapFun } = require('./character');
 const { pickStats } = require('./leaderboards');
+const { libraryQuests } = require('./library');
 
 const slimTrees = (talents) => (talents?.trees || []).map((t) => ({ name: t.name, points: t.points || 0 }));
 
@@ -18,6 +20,8 @@ const KINDS = {
   talents: { field: 'talentInfo', minLevel: 30, path: '/specializations', fromRaw: (raw) => ({ trees: slimTrees(mapTalents(raw)) }) },
   // p.funStats = { checkedAt, lastLogin, s: { statId: qty } }
   fun: { field: 'funStats', minLevel: 10, path: '/achievements/statistics', fromRaw: (raw) => ({ s: pickStats(mapFun(raw)) }) },
+  // p.libraryInfo = { checkedAt, lastLogin, q: [library quest ids] }
+  library: { field: 'libraryInfo', minLevel: 10, path: '/quests/completed', fromRaw: (raw) => ({ q: libraryQuests(raw) }) },
 };
 
 class Refresher {

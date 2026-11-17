@@ -115,6 +115,10 @@ totals and "Untouchables" (fewest deaths per 10 levels, 30+). The statistics com
 (1 call per play session) and whenever someone opens their character panel. Boards and titles are in
 `src/leaderboards.js`; the background job is `src/refresh.js`.
 
+"Bookworms" ranks library books handed in (of 40). Each book is its own turn-in quest, so the count is
+how many of the 40 book quest IDs (`src/library.js`) appear in `/quests/completed`, fetched the same way
+(1 more call per play session).
+
 ## Raid countdown
 
 The "Raids open in" card in the header counts down to the raid openings listed in `src/raids.js`
@@ -319,6 +323,7 @@ src/raids.js         Raid opening schedule for the header countdown
 src/roles.js         Role guess from talents
 src/refresh.js       Background refresh of talents and statistics after each logout
 src/leaderboards.js  Guild leaderboards from in-game statistics
+src/library.js       The 40 library books' quest IDs (Bookworms board)
 public/              index.html (roster), admin.html, styles.css, *.js
 Dockerfile, docker-compose.yml, deploy/  Hosting (deploy/auto-update.sh: redeploy on push)
 ```

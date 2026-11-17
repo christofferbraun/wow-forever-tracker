@@ -19,6 +19,7 @@ const { raidsFor } = require('./src/raids');
 const { guessRole } = require('./src/roles');
 const { Refresher } = require('./src/refresh');
 const leaderboards = require('./src/leaderboards');
+const { bookCount } = require('./src/library');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
@@ -322,6 +323,10 @@ app.get('/api/stats', (req, res) => {
   track(() => visits.ping(req, auth.isAdmin(req), 'stats'));
   const now = Date.now();
   const entries = statEntries();
+  const extras = store.list().filter((p) => !p.hidden).map((p) => {
+    const data = mergedData(p, store.meta.guild);
+    return { p, who: stats.who({ ...p, data }), level: data?.level ?? null };
+  });
   res.set('Cache-Control', 'no-store');
   res.json({
     pace: stats.pace(entries, now),
@@ -329,10 +334,7 @@ app.get('/api/stats', (req, res) => {
     distribution: stats.distribution(entries),
     heatmap: stats.heatmap(entries, now),
     trackingSince: stats.trackingSince(entries),
-    leaderboards: leaderboards.build(
-      store.list().filter((p) => !p.hidden).map((p) => ({ who: stats.who({ ...p, data: mergedData(p, store.meta.guild) }), level: mergedData(p, store.meta.guild)?.level ?? null, s: p.funStats?.s || null })),
-      entries.length,
-    ),
+    leaderboards: leaderboards.build(extras.map(({ who, level, p }) => ({ who, level, s: p.funStats?.s || null, books: bookCount(p.libraryInfo?.q) })), entries.length),
     serverTime: now,
   });
 });
