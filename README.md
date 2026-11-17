@@ -106,6 +106,15 @@ Protection counts as tank; Holy, Discipline and Restoration as healer; Feral as 
 other tree as DPS. If the second role has at least half as many points as the first (and 10+), the character is
 a hybrid, e.g. "Healer/DPS". The guess lives in `src/roles.js`.
 
+## Guild leaderboards
+
+The Stats tab ranks characters on their in-game statistics: deaths, falling deaths, creatures and critters
+killed, quests done and abandoned, dungeons, drinks, flight paths, need/greed rolls and more, plus guild
+totals and "Untouchables" (fewest deaths per 10 levels, 30+). The statistics come from
+`/achievements/statistics`, fetched in the background for every level 10+ character after each logout
+(1 call per play session) and whenever someone opens their character panel. Boards and titles are in
+`src/leaderboards.js`; the background job is `src/refresh.js`.
+
 ## Raid countdown
 
 The "Raids open in" card in the header counts down to the raid openings listed in `src/raids.js`
@@ -307,7 +316,9 @@ src/probe.js         Admin API probe: raw Blizzard responses for one character
 src/character.js     Character panel data: fetch, trim and cache gear, stats, talents…
 src/talents.js       Talent tree layouts and talent icons from Blizzard's static data
 src/raids.js         Raid opening schedule for the header countdown
-src/roles.js         Role guess from talents + background talent refresh
+src/roles.js         Role guess from talents
+src/refresh.js       Background refresh of talents and statistics after each logout
+src/leaderboards.js  Guild leaderboards from in-game statistics
 public/              index.html (roster), admin.html, styles.css, *.js
 Dockerfile, docker-compose.yml, deploy/  Hosting (deploy/auto-update.sh: redeploy on push)
 ```

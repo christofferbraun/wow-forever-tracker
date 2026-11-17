@@ -2,7 +2,7 @@
 
 /* Tabs (Roster / Activity / Stats) plus the Activity and Stats views. */
 (() => {
-  const { h, ago, fullDate, api, feedItem, condenseFeed, nameTag, MAX_LEVEL } = window.WF;
+  const { h, ago, fullDate, api, feedItem, condenseFeed, nameTag, classColor, MAX_LEVEL } = window.WF;
   const $ = (id) => document.getElementById(id);
   const VIEWS = ['roster', 'activity', 'stats', 'shame', 'milestones'];
   // Shame and Milestones are tabs only where their header cards are hidden (see styles.css).
@@ -142,11 +142,53 @@
 
   function renderStats() {
     if (!statsData || view !== 'stats') return;
+    renderBoards();
     renderPace();
     renderTrend();
     renderDist();
     renderHeat();
   }
+
+  // Guild leaderboards from in-game statistics. The first few show; the rest behind "Show all".
+  let boardsAll = false;
+  const BOARDS_SHOWN = () => (window.matchMedia('(max-width: 900px)').matches ? 6 : 12);
+  function renderBoards() {
+    const lb = statsData.leaderboards;
+    const card = $('boards-card');
+    card.hidden = !lb?.boards?.length;
+    if (card.hidden) return;
+    const fmt = (n) => Number(n).toLocaleString();
+    $('boards-sub').textContent = lb.coverage.have < lb.coverage.of
+      ? `From in-game statistics · ${lb.coverage.have} of ${lb.coverage.of} characters so far (the rest fill in as they log out)`
+      : `From in-game statistics · ${lb.coverage.have} characters`;
+    $('board-totals').replaceChildren(...lb.totals.filter((t) => t.value > 0).map((t) =>
+      h('div.board-total', h('span.bt-icon', { 'aria-hidden': 'true' }, t.icon), h('div', h('b', fmt(t.value)), h('span', t.label)))));
+    const shown = boardsAll ? lb.boards : lb.boards.slice(0, BOARDS_SHOWN());
+    $('boards-more-wrap').hidden = lb.boards.length <= BOARDS_SHOWN();
+    $('boards-more').textContent = boardsAll ? 'Show fewer' : `Show all ${lb.boards.length} leaderboards`;
+    $('boards').replaceChildren(...shown.map((b) => {
+      const best = b.top[0]?.value || 1;
+      return h('section.board',
+        h('div.board-head', h('span.board-icon', { 'aria-hidden': 'true' }, b.icon), h('div', h('h3', b.title), h('p', b.stat))),
+        h('ol', ...b.top.map((r, i) => {
+          const color = classColor(r);
+          // Bars show each value against the leader; for "fewest" boards, smaller is better.
+          const width = b.lowerIsBetter ? (r.value ? Math.max(8, (best / r.value) * 100) : 100) : (r.value / best) * 100;
+          return h('li', { style: color ? { '--class': color } : null },
+            h('span.b-bar', { style: { width: `${Math.min(100, width)}%` }, 'aria-hidden': 'true' }),
+            h('span.b-medal', String(i + 1)),
+            h('span.b-name', nameTag(r), r.level ? h('span.b-lvl', `${r.level}`) : null),
+            h('span.b-val', b.lowerIsBetter ? [r.value.toFixed(1), h('small', `${fmt(r.deaths)} deaths`)] : fmt(r.value)));
+        })),
+        b.total != null ? h('p.board-foot', h('span', `Guild total ${fmt(b.total)}`), h('span', `${b.count} ${b.count === 1 ? 'character' : 'characters'}`)) : null);
+    }));
+  }
+
+  $('boards-more').addEventListener('click', () => {
+    boardsAll = !boardsAll;
+    renderBoards();
+    if (!boardsAll) $('boards-card').scrollIntoView({ block: 'start' });
+  });
 
   function shortDate(t) { return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
   function trackedFor() {

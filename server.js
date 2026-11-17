@@ -16,7 +16,9 @@ const { probeCharacter } = require('./src/probe');
 const { CharacterDetails, NotVisibleError } = require('./src/character');
 const TalentTrees = require('./src/talents');
 const { raidsFor } = require('./src/raids');
-const { guessRole, RoleRefresher } = require('./src/roles');
+const { guessRole } = require('./src/roles');
+const { Refresher } = require('./src/refresh');
+const leaderboards = require('./src/leaderboards');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
@@ -25,7 +27,7 @@ const auth = createAuth(config);
 const visits = new Visits(config.dataDir);
 const characters = new CharacterDetails({ client, dataDir: config.dataDir });
 const talentTrees = new TalentTrees({ client, dataDir: config.dataDir });
-const roles = new RoleRefresher({ store, client });
+const refresher = new Refresher({ store, client });
 // Visitor tracking must never break a page or API response.
 const track = (fn) => { try { fn(); } catch (err) { console.error(`[visits] ${err.message}`); } };
 const { mergedLevel } = Poller;
@@ -290,7 +292,7 @@ app.get('/api/characters/:slug', async (req, res) => {
   try {
     const keep = new Set(store.list().map((x) => x.id));
     const details = await characters.get(p, keep);
-    if (details.talents && !details.stale && (p.data?.level ?? 0) >= 30) roles.record(p, details.talents);
+    refresher.recordDetails(p, details);
     // The class's talent tree layouts (static data, cached); the panel falls back to a list without them.
     let talentLayout = null;
     try {
@@ -327,6 +329,10 @@ app.get('/api/stats', (req, res) => {
     distribution: stats.distribution(entries),
     heatmap: stats.heatmap(entries, now),
     trackingSince: stats.trackingSince(entries),
+    leaderboards: leaderboards.build(
+      store.list().filter((p) => !p.hidden).map((p) => ({ who: stats.who({ ...p, data: mergedData(p, store.meta.guild) }), level: mergedData(p, store.meta.guild)?.level ?? null, s: p.funStats?.s || null })),
+      entries.length,
+    ),
     serverTime: now,
   });
 });
@@ -619,12 +625,12 @@ app.use(sendPage('index', 404));
 const server = app.listen(config.port, config.host, () => {
   console.log(`WoW Forever tracker listening on http://${config.host}:${config.port} (polling every ${config.pollIntervalMs / 1000}s)`);
   poller.start();
-  roles.start();
+  refresher.start();
 });
 
 function shutdown() {
   poller.stop();
-  roles.stop();
+  refresher.stop();
   visits.save();
   characters.save();
   talentTrees.save();

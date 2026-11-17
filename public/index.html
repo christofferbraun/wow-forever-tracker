@@ -157,13 +157,19 @@
     </div>
 
     <div class="view" id="view-stats" hidden>
-      <section class="card">
+      <section class="card boards-card" id="boards-card" hidden>
+        <div class="card-head"><h2>Guild leaderboards</h2><span class="card-sub" id="boards-sub"></span></div>
+        <div class="board-totals" id="board-totals"></div>
+        <div class="boards" id="boards"></div>
+        <p class="more" id="boards-more-wrap" hidden><button class="btn" id="boards-more" type="button">Show all</button></p>
+      </section>
+      <section class="card" id="pace-card">
         <div class="card-head"><h2>Race to 60</h2><span class="card-sub" id="pace-sub"></span></div>
         <div class="pace" id="pace" role="table" aria-label="Leveling pace"></div>
         <p class="more" id="pace-more-wrap" hidden><button class="btn" id="pace-more" type="button">Show all</button></p>
         <p class="pace-note">“Level 60 by” allows for later levels taking longer: each character's last 7 days are measured against the XP every level needs and how fast XP comes in at that level, then projected over what's left.</p>
       </section>
-      <div class="card-grid">
+      <div class="card-grid" id="trend-grid">
         <section class="card">
           <div class="card-head"><h2>Average level</h2><span class="card-sub" id="trend-sub"></span></div>
           <div class="chart" id="trend"></div>
@@ -173,7 +179,7 @@
           <div class="dist" id="dist"></div>
         </section>
       </div>
-      <section class="card">
+      <section class="card" id="heat-card">
         <div class="card-head"><h2>When the guild logs off</h2><span class="card-sub" id="heat-sub"></span></div>
         <div class="heat" id="heat"></div>
       </section>

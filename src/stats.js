@@ -206,4 +206,4 @@ function trackingSince(entries) {
   return starts.length ? Math.min(...starts) : null;
 }
 
-module.exports = { activity, pace, trend, distribution, heatmap, trackingSince, levelAt, effortAt, XP_TO_NEXT };
+module.exports = { activity, pace, trend, distribution, heatmap, trackingSince, levelAt, effortAt, who, XP_TO_NEXT };

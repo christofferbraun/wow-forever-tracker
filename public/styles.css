@@ -586,6 +586,47 @@ li.row-ph { display: block; color: transparent; user-select: none; }
 .gh-card:hover .gh-arrow { color: var(--gold); }
 .foot-links { white-space: nowrap; }
 
+/* ---------- guild leaderboards (Stats tab) ---------- */
+.boards-card[hidden] { display: none; }
+.board-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.board-total {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; min-width: 0;
+  background: linear-gradient(135deg, rgba(230,194,122,.12), rgba(230,194,122,.02)); border: 1px solid var(--line);
+}
+.board-total .bt-icon { font-size: 24px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+.board-total b { display: block; font: 700 20px/1.1 var(--display); color: var(--gold-hi); font-variant-numeric: tabular-nums; }
+.board-total span { display: block; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.boards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.board {
+  position: relative; padding: 12px 14px 10px; border-radius: 12px; border: 1px solid var(--line); min-width: 0; overflow: hidden;
+  background: radial-gradient(ellipse at 100% 0%, rgba(230,194,122,.07), transparent 60%), rgba(0,0,0,.18);
+}
+.board-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.board-icon { font-size: 26px; line-height: 1; flex: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+.board-head h3 { margin: 0; font: 600 15.5px/1.2 var(--display); color: var(--gold); }
+.board-head p { margin: 1px 0 0; font-size: 12px; color: var(--muted); }
+.board ol { list-style: none; margin: 0; padding: 0; }
+.board li {
+  --class: var(--gold); position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 5px 6px; border-radius: 8px; font-size: 13.5px; isolation: isolate;
+}
+.board li + li { margin-top: 2px; }
+.board .b-bar { position: absolute; inset: 0 auto 0 0; z-index: -1; border-radius: 8px; background: linear-gradient(90deg, color-mix(in srgb, var(--class) 22%, transparent), transparent); }
+.board .b-medal {
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 700 11px var(--body); color: var(--muted);
+  background: rgba(255,255,255,.06);
+}
+.board li:nth-child(1) .b-medal { background: radial-gradient(circle at 35% 30%, #fff3b0, #e6b422 55%, #8a6510); color: #3a2a00; box-shadow: 0 0 8px rgba(230,180,34,.55); }
+.board li:nth-child(2) .b-medal { background: radial-gradient(circle at 35% 30%, #ffffff, #b8c0cc 55%, #6b7380); color: #23272e; }
+.board li:nth-child(3) .b-medal { background: radial-gradient(circle at 35% 30%, #ffd2a6, #c27a3d 55%, #6e3c14); color: #2b1505; }
+.board li:nth-child(1) { font-size: 14.5px; padding: 7px 6px; }
+.board li:nth-child(1) .b-val { font-size: 17px; color: var(--gold-hi); }
+.board .b-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board .b-name .b-lvl { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
+.board .b-val { font: 700 15px var(--display); font-variant-numeric: tabular-nums; text-align: right; }
+.board .b-val small { font: 500 11px var(--body); color: var(--muted); margin-left: 3px; }
+.board-foot { margin: 8px 2px 0; font-size: 11.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+
 /* ---------- roles (guessed from talents) ---------- */
 .r-tank { --role: #5aa2ff; } .r-healer { --role: #4cc95a; } .r-dps { --role: #e5534b; } .r-hybrid { --role: #c9a2ff; }
 .role-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
@@ -787,9 +828,11 @@ li.row-ph { display: block; color: transparent; user-select: none; }
 
   #view-stats { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
   #view-stats[hidden] { display: none; }
-  #view-stats > .card:first-child { grid-column: 1; grid-row: 1 / span 2; }
-  #view-stats > .card-grid { grid-column: 2; grid-row: 1; grid-template-columns: 1fr; gap: 0; }
-  #view-stats > .card:last-child { grid-column: 2; grid-row: 2; }
+  #boards-card { grid-column: 1 / -1; grid-row: 1; }
+  #pace-card { grid-column: 1; grid-row: 2 / span 2; }
+  #trend-grid { grid-column: 2; grid-row: 2; grid-template-columns: 1fr; gap: 0; }
+  #heat-card { grid-column: 2; grid-row: 3; }
+  .boards { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 }
 
 /* ---------- character panel ---------- */
