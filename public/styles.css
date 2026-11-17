@@ -299,6 +299,18 @@ label.check input { width: 16px; height: 16px; accent-color: var(--gold); margin
 .pill.new { color: #9fd3a0; border-color: rgba(159,211,160,.4); }
 .vis-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; }
 
+/* ---------- admin: API probe ---------- */
+.probe-form { display: grid; grid-template-columns: minmax(0, 1fr) 110px 110px; gap: 12px; align-items: end; }
+.probe-form > *, .probe-form input { min-width: 0; }
+.probe-actions { margin: 4px 0 12px; }
+.probe-key { display: inline-flex; align-items: center; gap: 8px; font: 12px ui-monospace, Menlo, Consolas, monospace; }
+.probe-icon { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--line-strong); }
+.probe-miss td { color: var(--muted); }
+.probe-miss td:nth-child(2) { color: var(--bad); }
+.probe-detail td { padding: 0 0 10px; }
+.probe-json { max-height: 420px; overflow: auto; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35); font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; white-space: pre; }
+
 @media (max-width: 760px) {
   .vis-breakdown { grid-template-columns: 1fr; }
   .vis-chart { height: 140px; }
@@ -309,6 +321,8 @@ label.check input { width: 16px; height: 16px; accent-color: var(--gold); margin
   .guild-grid label:first-child { grid-column: 1 / -1; }
   .status-grid { grid-template-columns: 1fr 1fr; }
   .add-grid { grid-template-columns: 1fr 1fr; }
+  .probe-form { grid-template-columns: minmax(0, 1fr) 90px; }
+  .probe-form button { grid-column: 1 / -1; }
   .add-grid .wide { grid-column: 1 / -1; }
   .admin-row { grid-template-columns: auto 1fr; }
   .admin-controls { grid-column: 1 / -1; flex-wrap: wrap; }

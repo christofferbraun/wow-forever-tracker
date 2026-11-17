@@ -140,6 +140,25 @@
         <div id="admin-list" class="admin-list"></div>
         <p class="more" id="admin-more" hidden><button class="btn" id="admin-show-more" type="button">Show more</button></p>
       </section>
+
+      <section class="panel" id="probe-panel">
+        <h2>API probe</h2>
+        <p class="hint">Fetches every Blizzard endpoint we know of for one character (gear, stats, talents, professions, reputations…) plus item data and icons for their equipped gear, and shows the raw responses. Uses about 60 API calls. Nothing is saved.</p>
+        <form id="probe-form" class="probe-form">
+          <label>Character<input id="probe-name" list="probe-names" required placeholder="Anduin Wrynn" autocomplete="off"></label>
+          <label>Region<select id="probe-region"></select></label>
+          <button type="submit" class="btn primary" id="probe-go">Probe</button>
+        </form>
+        <datalist id="probe-names"></datalist>
+        <p class="msg" id="probe-msg" role="status"></p>
+        <div id="probe-out" hidden>
+          <div class="btns probe-actions">
+            <button class="btn" id="probe-download" type="button">Download JSON</button>
+            <button class="btn ghost" id="probe-copy" type="button">Copy JSON</button>
+          </div>
+          <div class="vis-table-wrap"><table class="vis-table" id="probe-table"></table></div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -147,6 +166,7 @@
 
   <script src="/common.js"></script>
   <script src="/admin-visits.js"></script>
+  <script src="/admin-probe.js"></script>
   <script src="/admin.js"></script>
 </body>
 </html>

@@ -12,6 +12,7 @@ const Poller = require('./src/poller');
 const createAuth = require('./src/auth');
 const stats = require('./src/stats');
 const Visits = require('./src/visits');
+const { probeCharacter } = require('./src/probe');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
@@ -500,6 +501,28 @@ admin.put('/visits/labels', (req, res) => {
 admin.delete('/visits', (req, res) => {
   visits.clear();
   res.json({ ok: true });
+});
+
+// --- API probe: raw Blizzard responses for one character ---
+
+let probeRunning = false;
+admin.post('/probe', async (req, res) => {
+  const region = parseRegion(req.body?.region);
+  if (!region) return res.status(400).json({ error: 'Unknown region' });
+  // Accept "first-surname" or "First Surname".
+  const slug = String(req.body?.slug ?? '').trim().toLowerCase().replace(/\s+/g, '-');
+  if (!/^[\p{L}\p{M}'’]+-[\p{L}\p{M}'’]+$/u.test(slug)) return res.status(400).json({ error: 'Enter a character as "First Surname"' });
+  if (!client.configured) return res.status(503).json({ error: 'Blizzard API credentials are not configured' });
+  if (probeRunning) return res.status(429).json({ error: 'A probe is already running' });
+  probeRunning = true;
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json(await probeCharacter(client, region, slug));
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  } finally {
+    probeRunning = false;
+  }
 });
 
 app.use('/api/admin', admin);

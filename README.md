@@ -272,6 +272,7 @@ src/poller.js        Polling loop: guild roster sync, profile refresh, level his
 src/auth.js          Admin password login, signed session cookie, rate limiting
 src/stats.js         Activity feed and guild analytics
 src/visits.js        Cookieless visitor log for the admin Visitors panel
+src/probe.js         Admin API probe: raw Blizzard responses for one character
 public/              index.html (roster), admin.html, styles.css, *.js
 Dockerfile, docker-compose.yml, deploy/  Hosting (deploy/auto-update.sh: redeploy on push)
 ```
@@ -284,7 +285,8 @@ Admin (session cookie + `X-Requested-With: fetch` header on writes): `POST /api/
 `GET /api/admin/status`, `GET|POST /api/admin/players`, `POST /api/admin/players/bulk`,
 `PATCH|DELETE /api/admin/players/:id` (PATCH accepts `note`, `region`, `hidden`), `POST /api/admin/players/:id/refresh`,
 `POST /api/admin/refresh-all`, `GET|PUT|DELETE /api/admin/guild`, `PATCH /api/admin/guild/ranks`,
-`GET|DELETE /api/admin/visits` (`?range=24h|7d|30d|90d&mine=1&tz=<minutes>`), `PUT /api/admin/visits/labels`
+`GET|DELETE /api/admin/visits` (`?range=24h|7d|30d|90d&mine=1&tz=<minutes>`), `PUT /api/admin/visits/labels`,
+`POST /api/admin/probe` (`{ slug, region }`: raw responses from every character endpoint, plus item data and icons for the equipped gear)
 
 Upgrading from the first version needs no migration: the existing `players.json` is read as is.
 
