@@ -435,31 +435,73 @@
       ...trees.flatMap((t, i) => [i ? h('span.muted', ' / ') : null, h(t.points ? 'b' : 'span.muted', `${t.name} ${t.points}`)]).filter(Boolean),
       h('span.muted', ` · ${total} point${total === 1 ? '' : 's'}`));
 
+    // All trees share one coordinate system, so they line up: Blizzard's canvas position
+    // (600 units per cell) when every node has it, otherwise display_row/col.
     const all = trees.flatMap((t) => t.nodes);
-    const topY = hasRaw(all) ? Math.min(...all.map((n) => n.y)) : null;
-    return [summary, h('div.tt-trees', ...trees.map((t) => treeEl(t, topY)))];
+    const raw = hasRaw(all);
+    const gx = (n) => (raw ? n.x / UNIT : n.col);
+    const gy = (n) => (raw ? n.y / UNIT : n.row);
+    const topGy = Math.min(...all.map(gy));
+    return [summary, h('div.tt-trees', ...trees.map((t) => treeEl(t, { gx, gy, topGy })))];
   }
 
-  // Grid positions. Blizzard's canvas coordinates (600 units per cell) are used when every node has
-  // them: display_row/col are off for some classes. Rows are measured from the class's top row
-  // (topY) so a tree whose first row is empty still lines up with the others.
   const UNIT = 600;
   const hasRaw = (nodes) => nodes.length && nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y));
+  const median = (xs) => { const s = xs.slice().sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 
-  function treeEl(tree, topY) {
-    let cols; let rows; let pos;
-    if (hasRaw(tree.nodes) && Number.isFinite(topY)) {
-      const minX = Math.min(...tree.nodes.map((n) => n.x));
-      cols = Math.max(4, Math.round((Math.max(...tree.nodes.map((n) => n.x)) - minX) / UNIT) + 1);
-      rows = Math.max(7, Math.round((Math.max(...tree.nodes.map((n) => n.y)) - topY) / UNIT) + 1);
-      pos = (n) => ({ x: ((n.x - minX) / UNIT) * CELL + CELL / 2, y: ((n.y - topY) / UNIT) * CELL + CELL / 2 });
-    } else {
-      const minCol = Math.min(...tree.nodes.map((n) => n.col));
-      cols = Math.max(4, Math.max(...tree.nodes.map((n) => n.col)) - minCol + 1);
-      rows = Math.max(7, ...tree.nodes.map((n) => n.row));
-      pos = (n) => ({ x: (n.col - minCol) * CELL + CELL / 2, y: (n.row - 1) * CELL + CELL / 2 });
+  function treeEl(tree, { gx, gy, topGy }) {
+    // Blizzard's data has the odd node far outside the 4-column grid, from an extra zero in a
+    // coordinate (Marksmanship's Improved Serpent Sting at y 39300 for 3930; a second copy of
+    // Survival's Lightning Reflexes at x 102800). Repeats of a talent already in the tree are
+    // dropped; any other stray is put back where the coordinate / 10 points, or failing that in
+    // the nearest free cell of its column.
+    const midX = median(tree.nodes.map(gx));
+    const okX = (x) => Math.abs(x - midX) <= 2.5;
+    const okY = (y) => y - topGy >= -0.5 && y - topGy <= 10.5;
+    const cell = (x, y) => `${Math.round(x)}:${Math.round(y)}`;
+    const coords = new Map();
+    const taken = new Set();
+    const strays = [];
+    for (const n of tree.nodes) {
+      if (okX(gx(n)) && okY(gy(n))) {
+        coords.set(n.id, { x: gx(n), y: gy(n) });
+        taken.add(cell(gx(n), gy(n)));
+      } else strays.push(n);
     }
-    const byId = new Map(tree.nodes.map((n) => [n.id, n]));
+    const inTree = new Set([...coords.keys()].flatMap((id) => {
+      const n = tree.nodes.find((x) => x.id === id);
+      return [`id:${n.talentId}`, `name:${n.name}`];
+    }));
+    for (const n of strays) {
+      if (inTree.has(`id:${n.talentId}`) || inTree.has(`name:${n.name}`)) continue; // duplicate
+      let x = gx(n);
+      let y = gy(n);
+      if (!okX(x) && okX(x / 10)) x /= 10;
+      if (!okY(y) && okY(y / 10)) y /= 10;
+      if (!okX(x)) x = midX;
+      if (!okY(y) || taken.has(cell(x, y))) {
+        // Nearest free row in this column.
+        const want = Math.min(Math.max(Math.round(y), Math.round(topGy)), Math.round(topGy) + 10);
+        for (let d = 0; d <= 10; d++) {
+          const up = want - d;
+          const down = want + d;
+          if (down <= topGy + 10 && !taken.has(cell(x, down))) { y = down; break; }
+          if (up >= topGy && !taken.has(cell(x, up))) { y = up; break; }
+        }
+      }
+      coords.set(n.id, { x, y });
+      taken.add(cell(x, y));
+      inTree.add(`id:${n.talentId}`);
+    }
+    const placed = tree.nodes.filter((n) => coords.has(n.id));
+    const cx = (n) => coords.get(n.id).x;
+    const cy = (n) => coords.get(n.id).y;
+
+    const minX = Math.min(...placed.map(cx));
+    const cols = Math.max(4, Math.round(Math.max(...placed.map(cx)) - minX) + 1);
+    const rows = Math.max(7, Math.round(Math.max(...placed.map(cy)) - topGy) + 1);
+    const pos = (n) => ({ x: (cx(n) - minX) * CELL + CELL / 2, y: (cy(n) - topGy) * CELL + CELL / 2 });
+    const byId = new Map(placed.map((n) => [n.id, n]));
 
     // Prerequisite arrows, and dashed links between "pick one" talents that lock each other.
     const svg = svgEl('svg', { class: 'tt-links', width: cols * CELL, height: rows * CELL, 'aria-hidden': 'true' });
@@ -468,7 +510,7 @@
     marker.append(svgEl('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'context-stroke' }));
     defs.append(marker);
     svg.append(defs);
-    for (const n of tree.nodes) {
+    for (const n of placed) {
       for (const targetId of n.unlocks) {
         const t = byId.get(targetId);
         if (!t) continue;
@@ -488,19 +530,22 @@
       }
     }
 
+    const nodeBtn = (n, style) => {
+      const key = `${tree.specId}:${n.id}`;
+      talentNodes.set(key, { node: n, tree });
+      const state = n.rank >= n.max ? 'max' : n.rank > 0 ? 'some' : 'none';
+      return h(`button.tt-node.${state}`, {
+        type: 'button', dataset: { node: key }, style,
+        'aria-label': `${n.name}, rank ${n.rank} of ${n.max}`,
+      },
+      n.icon ? h('img', { src: n.icon, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span.tt-noicon', n.name.charAt(0)),
+      h('span.tt-rank', `${n.rank}/${n.max}`));
+    };
+
     const grid = h('div.tt-grid', { style: { width: `${cols * CELL}px`, height: `${rows * CELL}px` } }, svg,
-      ...tree.nodes.map((n) => {
-        const key = `${tree.specId}:${n.id}`;
-        talentNodes.set(key, { node: n, tree });
+      ...placed.map((n) => {
         const { x, y } = pos(n);
-        const state = n.rank >= n.max ? 'max' : n.rank > 0 ? 'some' : 'none';
-        const btn = h(`button.tt-node.${state}`, {
-          type: 'button', dataset: { node: key }, style: { left: `${x - 20}px`, top: `${y - 20}px` },
-          'aria-label': `${n.name}, rank ${n.rank} of ${n.max}`,
-        },
-        n.icon ? h('img', { src: n.icon, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span.tt-noicon', n.name.charAt(0)),
-        h('span.tt-rank', `${n.rank}/${n.max}`));
-        return btn;
+        return nodeBtn(n, { left: `${x - 20}px`, top: `${y - 20}px` });
       }));
 
     return h('section.tt-tree',
