@@ -91,7 +91,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shado
 }
 .row {
   display: grid;
-  grid-template-columns: 36px minmax(220px, 2.4fr) 1.3fr 1fr 1fr .8fr 1fr 1fr;
+  grid-template-columns: 36px minmax(200px, 2.4fr) 1.3fr .9fr minmax(78px, .9fr) .9fr .7fr 1fr .9fr;
   align-items: center; gap: 12px; padding: 6px 16px; border-top: 1px solid var(--line);
 }
 .row.head {
@@ -437,10 +437,11 @@ label.check input { width: 16px; height: 16px; accent-color: var(--gold); margin
 #stats { order: 1; }
 #recent { order: 2; }
 #class-mix { order: 3; }
+#role-mix { order: 3; margin-top: -8px; }
 #view-roster .toolbar { order: 4; }
 #view-roster .roster { order: 5; }
 #top-week { display: none; }
-#overview, #class-card, #gh-card { display: none; }
+#overview, #class-card, #role-card, #gh-card { display: none; }
 .recent .feed-item:nth-child(n+4) { display: none; }
 
 .top-list { list-style: none; margin: 0; padding: 0; counter-reset: top; }
@@ -585,6 +586,44 @@ li.row-ph { display: block; color: transparent; user-select: none; }
 .gh-card:hover .gh-arrow { color: var(--gold); }
 .foot-links { white-space: nowrap; }
 
+/* ---------- roles (guessed from talents) ---------- */
+.r-tank { --role: #5aa2ff; } .r-healer { --role: #4cc95a; } .r-dps { --role: #e5534b; } .r-hybrid { --role: #c9a2ff; }
+.role-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.role-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--role); flex: none; }
+.role-dot + .role-dot { margin-left: -7px; box-shadow: 0 0 0 1.5px var(--panel-solid); }
+.role-icon {
+  flex: none; width: 16px; height: 16px; background: var(--role);
+  -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
+}
+.role-icon.r-tank { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5z'/%3E%3C/svg%3E"); }
+.role-icon.r-healer { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3h6v6h6v6h-6v6H9v-6H3V9h6z'/%3E%3C/svg%3E"); }
+.role-icon.r-dps { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M4 4l11 11M4 4h4M4 4v4M20 4 9 15M20 4h-4M20 4v4M13 17l4 4M11 17l-4 4M15 15l-2 2M9 15l2 2'/%3E%3C/svg%3E"); }
+.role-icon.r-hybrid { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2v16a8 8 0 0 1 0-16z'/%3E%3C/svg%3E"); }
+.role-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.role-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px 6px; min-width: 0; cursor: pointer;
+  background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font: 500 11.5px var(--body);
+}
+.role-tile b { font: 700 18px/1.15 var(--display); color: var(--text); }
+.role-tile:hover { border-color: var(--line-strong); }
+.role-tile[aria-pressed="true"] { border-color: var(--gold); background: rgba(230,194,122,.1); color: var(--text); }
+.role-foot { margin: 6px 0 2px; font-size: 11.5px; color: var(--muted); text-align: center; }
+.role-chip .role-icon { width: 12px; height: 12px; }
+.role-chip[aria-pressed="true"], .chip[aria-pressed="true"] { border-color: var(--gold); color: var(--text); }
+.m-meta .role-badge { font-size: 12px; color: var(--text); }
+
+/* ---------- raid countdown (title area: right side on the wide layout, under the tabs elsewhere) ---------- */
+.raid-card {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin: 14px auto 0; width: fit-content; max-width: 100%;
+  text-align: left; cursor: default;
+}
+.raid-card[hidden] { display: none; }
+.raid-icon { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--gold); background: rgba(230,194,122,.10); border: 1px solid var(--line); }
+.raid-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.raid-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.raid-count { font: 700 19px/1.25 var(--display); color: var(--gold-hi); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.raid-sub { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* ---------- public roster on phones: compact 3-line cards ----------
    Kept at the end of the file so it overrides the base rules above.
    [avatar] Name ............... 45 ▬▬ +1
@@ -632,7 +671,7 @@ li.row-ph { display: block; color: transparent; user-select: none; }
     grid-template-areas: "av name level" "av sub rc" ". meta meta";
     gap: 1px 10px; padding: 9px 12px;
   }
-  .rank, .c-class, .c-race, .c-ilvl, .c-login, .c-ding { display: none; }
+  .rank, .c-class, .c-role, .c-race, .c-ilvl, .c-login, .c-ding { display: none; }
   .char, .char-text { display: contents; }
   .row .avatar { grid-area: av; align-self: start; margin-top: 2px; }
   .avatar.md { width: 34px; height: 34px; border-radius: 8px; font-size: 12px; }
@@ -720,13 +759,17 @@ li.row-ph { display: block; color: transparent; user-select: none; }
   .side-right { grid-area: right; }
   .side { position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; scrollbar-width: thin; }
 
-  #view-roster #stats, #view-roster #class-mix { display: none; }
-  #overview, #class-card { display: block; }
+  #view-roster #stats, #view-roster #class-mix, #view-roster #role-mix { display: none; }
+  #overview, #class-card, #role-card { display: block; }
   /* GitHub link: left part of the title area, level with the status line and tabs. */
   .hero { position: relative; }
   #gh-card {
     display: flex; position: absolute; left: 0; bottom: 4px; margin: 0;
     width: min(320px, calc(50% - 170px)); text-align: left;
+  }
+  #raid-card {
+    position: absolute; right: 0; bottom: 4px; margin: 0;
+    width: min(320px, calc(50% - 170px));
   }
   .side .card { margin-bottom: 12px; padding: 12px 16px 8px; }
   .side .card-head { margin-bottom: 4px; }
@@ -925,7 +968,7 @@ button.slot:hover, button.slot:focus-visible { background: rgba(255,255,255,.05)
 .cp-all h4 { margin: 14px 0 4px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 
 /* talent trees, laid out like the in-game talent frame */
-.tt-trees { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+.tt-trees { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 14px; }
 .tt-tree {
   flex: 0 1 auto; min-width: 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 12px;
   background: radial-gradient(ellipse at 50% 0%, rgba(230,194,122,.08), transparent 70%), rgba(0,0,0,.25);

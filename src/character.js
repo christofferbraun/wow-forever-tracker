@@ -367,4 +367,4 @@ class CharacterDetails {
   }
 }
 
-module.exports = { CharacterDetails, NotVisibleError };
+module.exports = { CharacterDetails, NotVisibleError, mapTalents };

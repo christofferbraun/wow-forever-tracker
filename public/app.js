@@ -1,13 +1,13 @@
 'use strict';
 
 (() => {
-  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, feedItem, condenseFeed, nameTag, MAX_LEVEL } = window.WF;
+  const { h, ago, countdown, fullDate, api, classColor, displayName, avatar, levelCell, feedItem, condenseFeed, nameTag, roleBadge, MAX_LEVEL } = window.WF;
 
   const $ = (id) => document.getElementById(id);
   const PAGE = 150;
   const state = {
     players: [], guild: null, poll: null, serverOffset: 0,
-    search: '', sort: 'level', minLevel: 0, rank: '', limit: PAGE,
+    search: '', sort: 'level', minLevel: 0, rank: '', role: '', limit: PAGE,
   };
 
   try {
@@ -27,14 +27,20 @@
     ilvl: (a, b) => (b.data?.itemLevel ?? -1) - (a.data?.itemLevel ?? -1),
     login: (a, b) => (b.data?.lastLogin ?? 0) - (a.data?.lastLogin ?? 0),
     ding: (a, b) => (b.lastDingAt ?? 0) - (a.lastDingAt ?? 0),
+    role: (a, b) => (a.role?.label || '~').localeCompare(b.role?.label || '~') || sorters.level(a, b),
   };
+
+  // Role buckets for the Roles card / chips: hybrids are their own bucket.
+  const ROLE_BUCKETS = [['tank', 'Tanks'], ['healer', 'Healers'], ['dps', 'DPS'], ['hybrid', 'Hybrids']];
+  const roleBucket = (p) => (p.role ? (p.role.secondary ? 'hybrid' : p.role.primary) : null);
 
   function matches(p, q) {
     if ((p.data?.level ?? 0) < state.minLevel) return false;
     if (state.rank !== '' && String(p.rank) !== state.rank) return false;
+    if (state.role && roleBucket(p) !== state.role) return false;
     if (!q) return true;
     const d = p.data || {};
-    return [displayName(p), p.nickname, p.note, d.guild, d.className, d.raceName, d.faction, d.ruleset, p.region, p.rankName]
+    return [displayName(p), p.nickname, p.note, d.guild, d.className, d.raceName, d.faction, d.ruleset, p.region, p.rankName, p.role?.label]
       .some((v) => v && String(v).toLowerCase().includes(q));
   }
 
@@ -103,6 +109,44 @@
 
     renderOverview({ known, levels, avg, capped, top, dingsToday });
     renderClassList(counts);
+    renderRoles();
+  }
+
+  /** Tank / Healer / DPS / Hybrid counts (level filter applies); click to filter the roster. */
+  function renderRoles() {
+    const shown = state.players.filter((p) => (p.data?.level ?? 0) >= state.minLevel);
+    const counts = Object.fromEntries(ROLE_BUCKETS.map(([k]) => [k, 0]));
+    const hybrids = new Map();
+    for (const p of shown) {
+      const b = roleBucket(p);
+      if (!b) continue;
+      counts[b]++;
+      if (b === 'hybrid') hybrids.set(p.role.label, (hybrids.get(p.role.label) || 0) + 1);
+    }
+    const eligible = shown.filter((p) => (p.data?.level ?? 0) >= 30);
+    const unknown = eligible.filter((p) => !p.role).length;
+    const low = shown.length - eligible.length;
+    const known = ROLE_BUCKETS.reduce((s, [k]) => s + counts[k], 0);
+
+    const toggle = (k) => { state.role = state.role === k ? '' : k; state.limit = PAGE; renderRows(); renderRoles(); };
+    const tip = (k, label) => (k === 'hybrid' && hybrids.size
+      ? [...hybrids].map(([l, n]) => `${l}: ${n}`).join('\n')
+      : `Show only ${label.toLowerCase()}`);
+    $('role-tiles').replaceChildren(...ROLE_BUCKETS.map(([k, label]) => h('button.role-tile', {
+      type: 'button', 'aria-pressed': state.role === k ? 'true' : 'false', title: state.role === k ? 'Show everyone' : tip(k, label), onclick: () => toggle(k),
+    }, h(`span.role-icon.r-${k}`, { 'aria-hidden': 'true' }), h('b', String(counts[k])), h('span', label))));
+    const notes = [];
+    if (low) notes.push(`${low} under level 30`);
+    if (unknown) notes.push(`${unknown} not checked yet`);
+    $('role-card-sub').textContent = state.minLevel ? `Level ${state.minLevel}+` : 'From talents';
+    $('role-foot').textContent = notes.join(' · ');
+    $('role-foot').hidden = !notes.length;
+
+    // Narrow layouts: the same as chips under the class chips.
+    $('role-mix').replaceChildren(...ROLE_BUCKETS.filter(([k]) => counts[k] || state.role === k).map(([k, label]) =>
+      h('button.chip.role-chip', { type: 'button', 'aria-pressed': state.role === k ? 'true' : 'false', onclick: () => toggle(k) },
+        h(`span.role-icon.r-${k}`, { 'aria-hidden': 'true' }), label, h('b', String(counts[k])))));
+    $('role-mix').hidden = !known;
   }
 
   /** Wide layout: guild-wide numbers as a label/value list. */
@@ -183,6 +227,9 @@
       charCell,
       h('span.c-level', { 'data-label': 'Level' }, levelCell(p)),
       h('span.c-class', { 'data-label': 'Class', style: color ? { color } : null }, d.className || '—'),
+      h('span.c-role', { 'data-label': 'Role' }, roleBadge(p.role) || h('span.muted', {
+        title: (d.level ?? 0) < 30 ? 'Roles are guessed from talents from level 30' : 'Talents not checked yet',
+      }, '—')),
       h('span.c-race', { 'data-label': 'Race' }, d.raceName || '—'),
       h('span.c-ilvl', { 'data-label': 'Item Level' }, d.itemLevel != null ? String(d.itemLevel) : '—'),
       h('span.c-login', { 'data-label': 'Last Login', title: fullDate(d.lastLogin) }, ago(d.lastLogin, now())),
@@ -196,6 +243,7 @@
 
   function mobileMeta(p, d) {
     const parts = [];
+    if (p.role) parts.push(roleBadge(p.role));
     if (d.itemLevel != null) parts.push(h('span', 'Item Lvl ', h('b', String(d.itemLevel))));
     if (d.lastLogin) parts.push(h('span', 'Login ', h('b', ago(d.lastLogin, now()))));
     if (p.lastDingAt) parts.push(h('span.m-ding', 'Ding ', h('b', ago(p.lastDingAt, now()))));
@@ -356,6 +404,7 @@
       const site = await api('/api/site');
       $('site-title').textContent = site.title;
       document.title = site.title;
+      window.WFRaids?.set(site.raids, site.now);
     } catch { /* keep defaults */ }
   }
 

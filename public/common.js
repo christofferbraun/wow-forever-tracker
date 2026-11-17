@@ -128,6 +128,14 @@ window.WF = (() => {
     );
   }
 
+  /** "Healer/DPS"-style role pill (guessed from talents), or null. */
+  function roleBadge(role, opts = {}) {
+    if (!role) return null;
+    const parts = [role.primary, role.secondary].filter(Boolean);
+    return h(`span.role-badge.r-${parts.join('-')}`, { title: opts.title === false ? null : `${role.split} · guessed from talents` },
+      ...parts.map((r) => h(`span.role-dot.r-${r}`, { 'aria-hidden': 'true' })), role.label);
+  }
+
   /** Character name in class color, followed by the nickname if there is one. */
   function nameTag(item) {
     const color = classColor(item);
@@ -191,5 +199,5 @@ window.WF = (() => {
     );
   }
 
-  return { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, nameTag, feedItem, condenseFeed, MAX_LEVEL };
+  return { h, ago, countdown, fullDate, api, classColor, displayName, avatar, factionBadge, levelCell, nameTag, roleBadge, feedItem, condenseFeed, MAX_LEVEL };
 })();

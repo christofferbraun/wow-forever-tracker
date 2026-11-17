@@ -38,6 +38,10 @@
         <span class="gh-text"><b><span class="gh-long">Check out this project on GitHub</span><span class="gh-short">View on GitHub</span></b><span>Open source<span class="gh-long"> · MIT license</span></span></span>
         <span class="gh-arrow" aria-hidden="true">↗</span>
       </a>
+      <div class="card raid-card" id="raid-card" hidden>
+        <span class="raid-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6"/><path d="m16 16 4 4"/><path d="m19 21 2-2"/></svg></span>
+        <span class="raid-text"><span class="raid-label" id="raid-label">Raids open in</span><b class="raid-count" id="raid-count">…</b><span class="raid-sub" id="raid-sub"></span></span>
+      </div>
     </header>
     <aside class="top-side top-right">
       <section class="card next-ms" id="next-ms" aria-label="Next milestones">
@@ -56,6 +60,7 @@
     <aside class="side side-left">
       <section class="stats" id="stats" aria-label="Roster summary"></section>
       <section class="class-mix" id="class-mix" aria-label="Class mix"></section>
+      <section class="class-mix role-mix" id="role-mix" aria-label="Roles" hidden></section>
       <!-- Wide layout only: the tiles and chips above become these two lists. -->
       <section class="card side-list" id="overview" aria-label="Guild overview">
         <div class="card-head"><h2>Guild overview</h2></div>
@@ -64,6 +69,11 @@
       <section class="card side-list" id="class-card" aria-label="Classes">
         <div class="card-head"><h2>Classes</h2><span class="card-sub" id="class-card-sub"></span></div>
         <ul class="class-list" id="class-list"></ul>
+      </section>
+      <section class="card side-list" id="role-card" aria-label="Roles">
+        <div class="card-head"><h2>Roles</h2><span class="card-sub" id="role-card-sub"></span></div>
+        <div class="role-tiles" id="role-tiles"></div>
+        <p class="role-foot" id="role-foot" hidden></p>
       </section>
     </aside>
     <aside class="side side-right">
@@ -99,6 +109,7 @@
         <select id="sort">
           <option value="level">Level</option>          <option value="name">Name</option>
           <option value="class">Class</option>
+          <option value="role">Role</option>
           <option value="ilvl">Item level</option>
           <option value="login">Last login</option>
           <option value="ding">Last ding</option>
@@ -108,7 +119,7 @@
 
     <section class="roster" aria-label="Players">
       <div class="row head" role="row">
-        <span>#</span><span>Character</span><span>Level</span><span>Class</span><span>Race</span>
+        <span>#</span><span>Character</span><span>Level</span><span>Class</span><span title="Guessed from talents (level 30+)">Role</span><span>Race</span>
         <span>Item Level</span><span>Last Login</span><span>Last Ding</span>
       </div>
       <div id="rows"></div>
@@ -179,5 +190,6 @@
   <script src="/app.js"></script>
   <script src="/insights.js"></script>
   <script src="/character.js"></script>
+  <script src="/raids.js"></script>
 </body>
 </html>

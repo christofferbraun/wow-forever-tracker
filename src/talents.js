@@ -27,6 +27,9 @@ function mapNode(node) {
     id: node.id,
     row: Number(node.display_row) || 1,
     col: Number(node.display_col) || 1,
+    // Blizzard's own canvas position (600 units per cell); more reliable than row/col for some trees.
+    x: Number.isFinite(node.raw_position_x) ? node.raw_position_x : null,
+    y: Number.isFinite(node.raw_position_y) ? node.raw_position_y : null,
     max: ranks.length || 1,
     talentId: tip.talent?.id ?? null,
     name: str(tip.talent?.name) || str(spell.spell?.name) || '?',
@@ -106,7 +109,8 @@ class TalentTrees {
   async tree(region, treeId, specId) {
     const key = `${region}:${specId}`;
     const cached = this.state.trees[key];
-    if (cached && Date.now() - cached.fetchedAt < TREE_TTL) return cached;
+    // Entries cached before positions were kept (no "x") are refetched.
+    if (cached && Date.now() - cached.fetchedAt < TREE_TTL && cached.nodes.every((n) => 'x' in n)) return cached;
     return this.once(`tree:${key}`, async () => {
       const r = await this.client.request(region, `/data/wow/talent-tree/${treeId}/playable-specialization/${specId}`, { namespace: 'static' });
       if (r.status !== 200) {

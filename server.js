@@ -15,6 +15,8 @@ const Visits = require('./src/visits');
 const { probeCharacter } = require('./src/probe');
 const { CharacterDetails, NotVisibleError } = require('./src/character');
 const TalentTrees = require('./src/talents');
+const { raidsFor } = require('./src/raids');
+const { guessRole, RoleRefresher } = require('./src/roles');
 
 const store = new Store(config.dataDir);
 const client = new BlizzardClient(config);
@@ -23,6 +25,7 @@ const auth = createAuth(config);
 const visits = new Visits(config.dataDir);
 const characters = new CharacterDetails({ client, dataDir: config.dataDir });
 const talentTrees = new TalentTrees({ client, dataDir: config.dataDir });
+const roles = new RoleRefresher({ store, client });
 // Visitor tracking must never break a page or API response.
 const track = (fn) => { try { fn(); } catch (err) { console.error(`[visits] ${err.message}`); } };
 const { mergedLevel } = Poller;
@@ -154,6 +157,8 @@ function publicPlayer(p, g, now = Date.now()) {
     lastUpdatedAt: p.lastUpdatedAt,
     data,
     avatar: p.media?.avatar || null,
+    // Tank/Healer/DPS guessed from talent points (level 30+); null until known.
+    role: guessRole(p.talentInfo?.trees, data?.level),
     lastDingAt: dings.length ? dings[dings.length - 1].at : null,
     levelsToday: levelsGained24h(p, data?.level ?? null, now),
     inGuild,
@@ -230,7 +235,12 @@ function removeGuildMembers(g) {
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 app.get('/api/site', (req, res) => {
-  res.json({ title: config.siteTitle, subtitle: config.siteSubtitle, regions: config.regions, defaultRegion: config.defaultRegion });
+  const region = store.meta.guild?.region || config.defaultRegion;
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    title: config.siteTitle, subtitle: config.siteSubtitle, regions: config.regions, defaultRegion: config.defaultRegion,
+    raids: raidsFor(region), raidRegion: region, now: Date.now(),
+  });
 });
 
 app.get('/api/players', (req, res) => {
@@ -280,6 +290,7 @@ app.get('/api/characters/:slug', async (req, res) => {
   try {
     const keep = new Set(store.list().map((x) => x.id));
     const details = await characters.get(p, keep);
+    if (details.talents && !details.stale && (p.data?.level ?? 0) >= 30) roles.record(p, details.talents);
     // The class's talent tree layouts (static data, cached); the panel falls back to a list without them.
     let talentLayout = null;
     try {
@@ -608,10 +619,12 @@ app.use(sendPage('index', 404));
 const server = app.listen(config.port, config.host, () => {
   console.log(`WoW Forever tracker listening on http://${config.host}:${config.port} (polling every ${config.pollIntervalMs / 1000}s)`);
   poller.start();
+  roles.start();
 });
 
 function shutdown() {
   poller.stop();
+  roles.stop();
   visits.save();
   characters.save();
   talentTrees.save();

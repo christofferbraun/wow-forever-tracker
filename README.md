@@ -98,6 +98,21 @@ On Forever the item lookup (`/data/wow/item/{id}`) returns 404 for most items, b
 already carries everything a tooltip needs, so it isn't used. The admin **API probe** panel shows the raw
 responses for any character if you want to check what Blizzard sends.
 
+## Roles (Tank / Healer / DPS)
+
+From level 30 each character's talent split is fetched in the background (1 call each, and again only after
+they log out) and turned into a role guess, shown as a roster column and a Roles card you can click to filter.
+Protection counts as tank; Holy, Discipline and Restoration as healer; Feral as half tank, half DPS; every
+other tree as DPS. If the second role has at least half as many points as the first (and 10+), the character is
+a hybrid, e.g. "Healer/DPS". The guess lives in `src/roles.js`.
+
+## Raid countdown
+
+The "Raids open in" card in the header counts down to the raid openings listed in `src/raids.js`
+(UTC times per region; the page shows them in each visitor's local time and uses the guild's region).
+It switches to "Raids are open" when they open and hides itself three days later. Edit the list and push
+to change it.
+
 ## Visitor stats (admin only)
 
 The **Visitors** panel on `/admin` shows whether the site is being used: who is on it right now, page
@@ -290,6 +305,9 @@ src/stats.js         Activity feed and guild analytics
 src/visits.js        Cookieless visitor log for the admin Visitors panel
 src/probe.js         Admin API probe: raw Blizzard responses for one character
 src/character.js     Character panel data: fetch, trim and cache gear, stats, talents…
+src/talents.js       Talent tree layouts and talent icons from Blizzard's static data
+src/raids.js         Raid opening schedule for the header countdown
+src/roles.js         Role guess from talents + background talent refresh
 public/              index.html (roster), admin.html, styles.css, *.js
 Dockerfile, docker-compose.yml, deploy/  Hosting (deploy/auto-update.sh: redeploy on push)
 ```

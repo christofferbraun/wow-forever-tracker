@@ -5,7 +5,7 @@
  * shared. Any <a href="#c/..."> on the page opens it (names in the roster, feed, etc.).
  */
 (() => {
-  const { h, ago, fullDate, api, classColor, avatar, displayName } = window.WF;
+  const { h, ago, fullDate, api, classColor, avatar, displayName, roleBadge } = window.WF;
 
   const TABS = [
     ['gear', 'Gear'], ['stats', 'Stats'], ['talents', 'Talents'],
@@ -126,6 +126,7 @@
     const meta = [];
     if (p?.nickname) meta.push(h('span.nick', p.nickname));
     if (line1) meta.push(h('span', line1));
+    if (p?.role) meta.push(roleBadge(p.role));
     if (p?.inGuild && p.rankName) meta.push(h('span.guild', `${p.rankName} of <${d.guild}>`));
     else if (d.guild) meta.push(h('span.guild', `<${d.guild}>`));
 
@@ -434,14 +435,30 @@
       ...trees.flatMap((t, i) => [i ? h('span.muted', ' / ') : null, h(t.points ? 'b' : 'span.muted', `${t.name} ${t.points}`)]).filter(Boolean),
       h('span.muted', ` · ${total} point${total === 1 ? '' : 's'}`));
 
-    return [summary, h('div.tt-trees', ...trees.map((t) => treeEl(t)))];
+    const all = trees.flatMap((t) => t.nodes);
+    const topY = hasRaw(all) ? Math.min(...all.map((n) => n.y)) : null;
+    return [summary, h('div.tt-trees', ...trees.map((t) => treeEl(t, topY)))];
   }
 
-  function treeEl(tree) {
-    const minCol = Math.min(...tree.nodes.map((n) => n.col));
-    const cols = Math.max(4, Math.max(...tree.nodes.map((n) => n.col)) - minCol + 1);
-    const rows = Math.max(7, ...tree.nodes.map((n) => n.row));
-    const pos = (n) => ({ x: (n.col - minCol) * CELL + CELL / 2, y: (n.row - 1) * CELL + CELL / 2 });
+  // Grid positions. Blizzard's canvas coordinates (600 units per cell) are used when every node has
+  // them: display_row/col are off for some classes. Rows are measured from the class's top row
+  // (topY) so a tree whose first row is empty still lines up with the others.
+  const UNIT = 600;
+  const hasRaw = (nodes) => nodes.length && nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y));
+
+  function treeEl(tree, topY) {
+    let cols; let rows; let pos;
+    if (hasRaw(tree.nodes) && Number.isFinite(topY)) {
+      const minX = Math.min(...tree.nodes.map((n) => n.x));
+      cols = Math.max(4, Math.round((Math.max(...tree.nodes.map((n) => n.x)) - minX) / UNIT) + 1);
+      rows = Math.max(7, Math.round((Math.max(...tree.nodes.map((n) => n.y)) - topY) / UNIT) + 1);
+      pos = (n) => ({ x: ((n.x - minX) / UNIT) * CELL + CELL / 2, y: ((n.y - topY) / UNIT) * CELL + CELL / 2 });
+    } else {
+      const minCol = Math.min(...tree.nodes.map((n) => n.col));
+      cols = Math.max(4, Math.max(...tree.nodes.map((n) => n.col)) - minCol + 1);
+      rows = Math.max(7, ...tree.nodes.map((n) => n.row));
+      pos = (n) => ({ x: (n.col - minCol) * CELL + CELL / 2, y: (n.row - 1) * CELL + CELL / 2 });
+    }
     const byId = new Map(tree.nodes.map((n) => [n.id, n]));
 
     // Prerequisite arrows, and dashed links between "pick one" talents that lock each other.
