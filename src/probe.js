@@ -129,15 +129,38 @@ async function probeCharacter(client, region, slug, mode = 'all') {
     talentIndex.talents = talentIndex.talents.slice(0, 25);
   }
 
+  // Every spec tree of the character's class (found via a spec they have points in, or the class
+  // name), including trees with no points: those are drawn too.
   const index = results['talent-tree/index']?.data;
-  const treeLinks = [
-    ...(Array.isArray(index?.class_talent_trees) ? index.class_talent_trees : []),
-    ...(Array.isArray(index?.spec_talent_trees) ? index.spec_talent_trees : []),
-  ].map((t) => t?.key?.href).filter((href) => typeof href === 'string'
-    && (specIds.some((id) => href.includes(`playable-specialization/${id}`)) || (Number.isInteger(classId) && href.includes(`playable-class/${classId}`))));
+  const specTrees = Array.isArray(index?.spec_talent_trees) ? index.spec_talent_trees : [];
+  const treeOf = (href) => /talent-tree\/(\d+)/.exec(href || '')?.[1];
+  const className = results['character (profile)']?.data?.character_class?.name;
+  const classTreeId = treeOf(specTrees.find((t) => specIds.some((id) => t?.key?.href?.includes(`playable-specialization/${id}`)))?.key?.href)
+    || treeOf((Array.isArray(index?.class_talent_trees) ? index.class_talent_trees : []).find((t) => className && t?.name === className)?.key?.href);
+  const treeLinks = specTrees.map((t) => t?.key?.href)
+    .filter((href) => typeof href === 'string' && classTreeId && treeOf(href) === classTreeId);
   const treePaths = [...new Set(treeLinks.map((href) => { try { return new URL(href).pathname; } catch { return null; } }).filter(Boolean))].slice(0, 6);
   reserve(treePaths.map((p) => `talent-tree:${p}`));
   await pool(treePaths, 3, (p) => fetchOne(`talent-tree:${p}`, p, 'static'));
+  // Trees repeat a full tooltip per rank; keep one full node as a sample and compact the rest to
+  // the fields that matter for layout, so the file stays small enough to send.
+  for (const p of treePaths) {
+    const data = results[`talent-tree:${p}`]?.data;
+    const nodes = Array.isArray(data?.spec_talent_nodes) ? data.spec_talent_nodes : null;
+    if (!nodes?.length) continue;
+    data.sample_node = nodes[0];
+    data.spec_talent_nodes = nodes.map((n) => {
+      const { ranks, ...rest } = n;
+      const tip = Array.isArray(ranks) ? ranks[0]?.tooltip : null;
+      return {
+        ...rest,
+        name: tip?.talent?.name ?? tip?.spell_tooltip?.spell?.name ?? null,
+        talent_id: tip?.talent?.id ?? null,
+        rank_count: Array.isArray(ranks) ? ranks.length : null,
+        rank_keys: Array.isArray(ranks) && ranks[0] ? Object.keys(ranks[0]) : null,
+      };
+    });
+  }
 
   return {
     probedAt: startedAt,
