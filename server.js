@@ -544,7 +544,7 @@ admin.post('/probe', async (req, res) => {
   probeRunning = true;
   try {
     res.set('Cache-Control', 'no-store');
-    res.json(await probeCharacter(client, region, slug));
+    res.json(await probeCharacter(client, region, slug, req.body?.mode === 'talents' ? 'talents' : 'all'));
   } catch (err) {
     res.status(502).json({ error: err.message });
   } finally {

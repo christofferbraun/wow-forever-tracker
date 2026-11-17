@@ -42,7 +42,7 @@
     btn.disabled = true;
     $('probe-msg').textContent = 'Probing… (takes a few seconds)';
     try {
-      result = await api('/api/admin/probe', { method: 'POST', body: { slug: $('probe-name').value, region: $('probe-region').value } });
+      result = await api('/api/admin/probe', { method: 'POST', body: { slug: $('probe-name').value, region: $('probe-region').value, mode: $('probe-mode').value } });
       const s = Object.values(result.summary);
       $('probe-msg').textContent = `${s.filter(okStatus).length} of ${s.length} calls returned data in ${(result.tookMs / 1000).toFixed(1)} s${result.rateLimited ? ' · stopped early: rate limited' : ''}.`;
       render();
@@ -93,7 +93,7 @@
   $('probe-download').addEventListener('click', () => {
     if (!result) return;
     const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
-    const a = h('a', { href: URL.createObjectURL(blob), download: `probe-${result.slug}-${result.region}-${new Date(result.probedAt).toISOString().slice(0, 10)}.json` });
+    const a = h('a', { href: URL.createObjectURL(blob), download: `probe-${result.slug}-${result.region}${result.mode === 'talents' ? '-talents' : ''}-${new Date(result.probedAt).toISOString().slice(0, 10)}.json` });
     document.body.append(a);
     a.click();
     a.remove();

@@ -5,7 +5,8 @@
  * data and icons for the equipped gear) and returns the raw Blizzard responses, so
  * we can see exactly what WoW: Forever exposes before building on it.
  *
- * Costs roughly 20 calls for the character plus 2 per equipped item (~60 total).
+ * Costs roughly 20 calls for the character, 2 per equipped item and up to ~35 for talent
+ * data (~100 total). mode 'talents' fetches only the profile, talents and talent static data.
  */
 
 const { BlizzardClient, RateLimitError } = require('./blizzard');
@@ -53,7 +54,7 @@ async function pool(items, limit, fn) {
   return out;
 }
 
-async function probeCharacter(client, region, slug) {
+async function probeCharacter(client, region, slug, mode = 'all') {
   const startedAt = Date.now();
   const results = {};
   let calls = 0;
@@ -79,8 +80,9 @@ async function probeCharacter(client, region, slug) {
 
   const base = BlizzardClient.slugPath(slug);
   const charKey = (p) => `character${p || ' (profile)'}`;
-  reserve(CHARACTER_PATHS.map(charKey));
-  await pool(CHARACTER_PATHS, 4, (p) => fetchOne(charKey(p), base + p, 'profile'));
+  const charPaths = mode === 'talents' ? ['', '/specializations'] : CHARACTER_PATHS;
+  reserve(charPaths.map(charKey));
+  await pool(charPaths, 4, (p) => fetchOne(charKey(p), base + p, 'profile'));
 
   // Static item data + icon for each equipped item, and any item sets they belong to.
   const equipped = results['character/equipment']?.data?.equipped_items;
@@ -97,8 +99,49 @@ async function probeCharacter(client, region, slug) {
   });
   await pool(setIds, 4, (id) => fetchOne(`item-set/${id}`, `/data/wow/item-set/${id}`, 'static'));
 
+  // Talent tree layout: what static data exists for drawing trees like the game does
+  // (positions, max ranks, icons)? The character data only has names and ranks.
+  const groups = results['character/specializations']?.data?.specialization_groups;
+  const specs = (Array.isArray(groups) ? groups : []).flatMap((g) => (Array.isArray(g.specializations) ? g.specializations : []));
+  const specIds = [...new Set(specs.map((s) => s.specialization?.id).filter(Number.isInteger))];
+  const talents = specs.flatMap((s) => (Array.isArray(s.talents) ? s.talents : []));
+  const talentIds = [...new Set(talents.map((t) => t.talent?.id).filter(Number.isInteger))].slice(0, 4);
+  const spellIds = [...new Set(talents.map((t) => t.spell_tooltip?.spell?.id).filter(Number.isInteger))].slice(0, MAX_ITEMS);
+  const classId = results['character (profile)']?.data?.character_class?.id;
+
+  const staticPaths = [
+    ['talent-tree/index', '/data/wow/talent-tree/index'],
+    ['talent/index', '/data/wow/talent/index'],
+    ...(Number.isInteger(classId) ? [[`playable-class/${classId}`, `/data/wow/playable-class/${classId}`]] : []),
+    ...specIds.map((id) => [`playable-specialization/${id}`, `/data/wow/playable-specialization/${id}`]),
+    ...talentIds.map((id) => [`talent/${id}`, `/data/wow/talent/${id}`]),
+    ...spellIds.slice(0, 2).map((id) => [`spell/${id}`, `/data/wow/spell/${id}`]),
+    ...spellIds.map((id) => [`spell-media/${id}`, `/data/wow/media/spell/${id}`]),
+  ];
+  reserve(staticPaths.map(([k]) => k));
+  await pool(staticPaths, 4, ([key, p]) => fetchOne(key, p, 'static'));
+
+  // Follow the tree index to this character's class/spec trees, if it lists any.
+  // The talent index can list thousands of talents; a sample is enough to see the shape.
+  const talentIndex = results['talent/index']?.data;
+  if (Array.isArray(talentIndex?.talents) && talentIndex.talents.length > 25) {
+    talentIndex.talents_total = talentIndex.talents.length;
+    talentIndex.talents = talentIndex.talents.slice(0, 25);
+  }
+
+  const index = results['talent-tree/index']?.data;
+  const treeLinks = [
+    ...(Array.isArray(index?.class_talent_trees) ? index.class_talent_trees : []),
+    ...(Array.isArray(index?.spec_talent_trees) ? index.spec_talent_trees : []),
+  ].map((t) => t?.key?.href).filter((href) => typeof href === 'string'
+    && (specIds.some((id) => href.includes(`playable-specialization/${id}`)) || (Number.isInteger(classId) && href.includes(`playable-class/${classId}`))));
+  const treePaths = [...new Set(treeLinks.map((href) => { try { return new URL(href).pathname; } catch { return null; } }).filter(Boolean))].slice(0, 6);
+  reserve(treePaths.map((p) => `talent-tree:${p}`));
+  await pool(treePaths, 3, (p) => fetchOne(`talent-tree:${p}`, p, 'static'));
+
   return {
     probedAt: startedAt,
+    mode,
     region,
     slug,
     tookMs: Date.now() - startedAt,

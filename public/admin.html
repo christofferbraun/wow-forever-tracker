@@ -143,10 +143,11 @@
 
       <section class="panel" id="probe-panel">
         <h2>API probe</h2>
-        <p class="hint">Fetches every Blizzard endpoint we know of for one character (gear, stats, talents, professions, reputations…) plus item data and icons for their equipped gear, and shows the raw responses. Uses about 60 API calls. Nothing is saved.</p>
+        <p class="hint">Fetches every Blizzard endpoint we know of for one character (gear, stats, talents, professions, reputations…) plus item data and icons for their equipped gear and talent tree data, and shows the raw responses. Uses about 100 API calls ("Talents only": about 35). Nothing is saved.</p>
         <form id="probe-form" class="probe-form">
           <label>Character<input id="probe-name" list="probe-names" required placeholder="Anduin Wrynn" autocomplete="off"></label>
           <label>Region<select id="probe-region"></select></label>
+          <label>What<select id="probe-mode"><option value="all">Everything</option><option value="talents">Talents only</option></select></label>
           <button type="submit" class="btn primary" id="probe-go">Probe</button>
         </form>
         <datalist id="probe-names"></datalist>
