@@ -334,7 +334,7 @@ app.get('/api/stats', (req, res) => {
     distribution: stats.distribution(entries),
     heatmap: stats.heatmap(entries, now),
     trackingSince: stats.trackingSince(entries),
-    leaderboards: leaderboards.build(extras.map(({ who, level, p }) => ({ who, level, s: p.funStats?.s || null, books: bookCount(p.libraryInfo?.q) })), entries.length),
+    leaderboards: leaderboards.build(extras.map(({ who, level, p }) => ({ who, level, s: p.funStats?.s || null, books: bookCount(p.libraryInfo?.q) }))),
     serverTime: now,
   });
 });

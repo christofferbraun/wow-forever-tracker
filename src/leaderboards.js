@@ -9,11 +9,12 @@
 
 const { BOOKS } = require('./library');
 
-// [key, emoji, title, what it counts, stat ids summed]
+// [key, emoji, title, what it counts, stat ids summed, fallback ids if none of those are stored yet]
 const BOARDS = [
   ['deaths', '💀', 'Spirit Healer Regulars', 'Total deaths', [60]],
   ['falls', '🪂', 'Gravity Always Wins', 'Deaths from falling', [114]],
-  ['wipes', '🧟', 'Wipe Magnets', 'Deaths in dungeons', [918]],
+  // 321 counts raids too (from Dec 9); 918 (5-player only) stands in until a character's stats are refetched.
+  ['wipes', '🧟', 'Wipe Magnets', 'Deaths in dungeons & raids', [321], [918]],
   ['ganked', '🗡️', 'Ganked', 'Killed by other players', [1501]],
   ['kills', '⚔️', 'Exterminators', 'Creatures killed', [107]],
   ['critters', '🐇', 'Critter Menace', 'Critters killed', [108]],
@@ -42,8 +43,9 @@ const TOTALS = [
   ['Drinks downed', '🍺', [346]],
 ];
 
-const TRACKED = [...new Set([...BOARDS.flatMap((b) => b[4]), ...TOTALS.flatMap((t) => t[2]), 60])];
+const TRACKED = [...new Set([...BOARDS.flatMap((b) => [...b[4], ...(b[5] || [])]), ...TOTALS.flatMap((t) => t[2]), 60])];
 const TOP = 5;
+const MIN_LEVEL = 10; // Blizzard has statistics from level 10
 
 /** Flattened statistics ([{ id, qty }]) -> { id: qty } for the stats we use. */
 function pickStats(list) {
@@ -58,12 +60,14 @@ const sum = (s, ids) => ids.reduce((n, id) => n + (s?.[id] || 0), 0);
 
 /**
  * rows: [{ who: { playerId, slug, name, nickname, classId, className }, level, s, books }]
- * Characters without statistics yet are left out (counted in `coverage`). `books` is null until checked.
+ * Characters without statistics yet are left out (counted in `coverage`, which only counts level 10+,
+ * since Blizzard has no statistics below that). `books` is null until checked.
  */
-function build(rows, total) {
+function build(rows) {
   const have = rows.filter((r) => r.s && Object.keys(r.s).length);
-  const boards = BOARDS.map(([key, icon, title, stat, ids]) => {
-    const ranked = have.map((r) => ({ ...r.who, level: r.level, value: sum(r.s, ids) }))
+  const boards = BOARDS.map(([key, icon, title, stat, ids, fallback]) => {
+    const value = (s) => (fallback && !ids.some((id) => id in s) ? sum(s, fallback) : sum(s, ids));
+    const ranked = have.map((r) => ({ ...r.who, level: r.level, value: value(r.s) }))
       .filter((r) => r.value > 0)
       .sort((a, b) => b.value - a.value || (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name));
     return { key, icon, title, stat, top: ranked.slice(0, TOP), total: ranked.reduce((n, r) => n + r.value, 0), count: ranked.length };
@@ -89,7 +93,7 @@ function build(rows, total) {
   return {
     totals: TOTALS.map(([label, icon, ids]) => ({ label, icon, value: have.reduce((n, r) => n + sum(r.s, ids), 0) })),
     boards,
-    coverage: { have: have.length, of: total },
+    coverage: { have: have.length, of: Math.max(have.length, rows.filter((r) => (r.level ?? 0) >= MIN_LEVEL).length) },
   };
 }
 
